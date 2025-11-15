@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Chat Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for connection lines */
+        .message-thread {
+            position: relative;
+        }
+        
+        /* Vertical connection line on the left */
+        .message-thread::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, 
+                rgba(147, 197, 253, 0.3) 0%, 
+                rgba(147, 197, 253, 0.6) 50%, 
+                rgba(147, 197, 253, 0.3) 100%);
+        }
+        
+        /* Connection node */
+        .connection-node {
+            position: absolute;
+            left: 12px;
+            top: 24px;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Agent-specific colors */
+        .agent-product-owner .connection-node { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .agent-scrum-master .connection-node { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .agent-developer .connection-node { background: linear-gradient(135deg, #10b981, #059669); }
+        .agent-architect .connection-node { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        
+        /* Message cards */
+        .message-card {
+            position: relative;
+            margin-left: 50px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .message-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        /* Agent-specific card styling */
+        .agent-product-owner .message-card { border-left: 4px solid #3b82f6; }
+        .agent-scrum-master .message-card { border-left: 4px solid #8b5cf6; }
+        .agent-developer .message-card { border-left: 4px solid #10b981; }
+        .agent-architect .message-card { border-left: 4px solid #ef4444; }
+        
+        /* User message styling */
+        .user-message {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-left: 4px solid #667eea;
+        }
+        
+        /* Agent selector badges */
+        .agent-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .agent-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .agent-badge.selected {
+            border-color: currentColor;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .agent-badge-product-owner { background: rgba(59, 130, 246, 0.15); color: #1e40af; }
+        .agent-badge-product-owner.selected { background: #3b82f6; color: white; }
+        
+        .agent-badge-scrum-master { background: rgba(139, 92, 246, 0.15); color: #6b21a8; }
+        .agent-badge-scrum-master.selected { background: #8b5cf6; color: white; }
+        
+        .agent-badge-developer { background: rgba(16, 185, 129, 0.15); color: #065f46; }
+        .agent-badge-developer.selected { background: #10b981; color: white; }
+        
+        .agent-badge-architect { background: rgba(239, 68, 68, 0.15); color: #991b1b; }
+        .agent-badge-architect.selected { background: #ef4444; color: white; }
+        
+        /* Reply selector panel */
+        .reply-selector {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            margin-top: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Branch indicator */
+        .branch-line {
+            position: absolute;
+            left: 21px;
+            top: -10px;
+            width: 30px;
+            height: 30px;
+            border-left: 2px solid rgba(147, 197, 253, 0.4);
+            border-bottom: 2px solid rgba(147, 197, 253, 0.4);
+            border-bottom-left-radius: 12px;
+        }
+        
+        /* Insight badge */
+        .insight-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
+            color: #b45309;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        
+        /* Response count badge */
+        .response-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 min-h-screen p-8">
+    
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Multi-Agent Conversation</h1>
+            <p class="text-gray-600">Initiation Ceremony - Project Vision Discussion</p>
+            <div class="mt-4 flex justify-center gap-3 flex-wrap">
+                <span class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200">
+                    <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
+                    <span class="text-sm font-semibold text-gray-700">4 Agents Active</span>
+                </span>
+                <span class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200">
+                    <i data-lucide="message-circle" class="w-4 h-4 text-blue-600"></i>
+                    <span class="text-sm font-semibold text-gray-700">12 Messages</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Conversation Thread -->
+        <div class="message-thread space-y-6 relative pb-12">
+            
+            <!-- Message 1: User Starts -->
+            <div class="relative">
+                <div class="connection-node" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                <div class="message-card user-message">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <i data-lucide="user" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">You</div>
+                                <div class="text-xs text-gray-500">10:30 AM</div>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="text-gray-700 leading-relaxed mb-3">
+                        "I want to build a comprehensive project management tool that helps teams collaborate better. It should have AI assistance for planning and task management."
+                    </div>
+                    
+                    <!-- Reply Selector -->
+                    <div class="reply-selector">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                <i data-lucide="arrow-right-circle" class="w-4 h-4 text-purple-600"></i>
+                                Request Response From:
+                            </span>
+                            <button class="text-xs text-purple-600 hover:text-purple-700 font-semibold">Select All</button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <div class="agent-badge agent-badge-product-owner selected">
+                                <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                                Product Owner
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </div>
+                            <div class="agent-badge agent-badge-architect selected">
+                                <i data-lucide="layout" class="w-4 h-4"></i>
+                                Architect
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                            </div>
+                            <div class="agent-badge agent-badge-developer">
+                                <i data-lucide="code" class="w-4 h-4"></i>
+                                Developer
+                            </div>
+                            <div class="agent-badge agent-badge-scrum-master">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                Scrum Master
+                            </div>
+                        </div>
+                        <button class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            Send to 2 Agents
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message 2: Product Owner Response -->
+            <div class="relative agent-product-owner">
+                <div class="branch-line"></div>
+                <div class="connection-node"></div>
+                <div class="message-card">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                <i data-lucide="clipboard-list" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">Product Owner</div>
+                                <div class="text-xs text-gray-500">10:31 AM • Responding to your message</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="insight-badge">
+                                <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                                Insight
+                            </span>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-gray-700 leading-relaxed">
+                        <p class="mb-2">"Excellent! Let me help define the vision. For a project management tool with AI assistance, we should focus on:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>User story management</li>
+                            <li>Sprint planning capabilities</li>
+                            <li>Real-time collaboration</li>
+                            <li>AI-powered task suggestions</li>
+                        </ul>
+                        <p class="mt-2">Let me ask the architect about technical feasibility..."</p>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <button class="text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
+                            <i data-lucide="corner-down-right" class="w-4 h-4"></i>
+                            Reply
+                        </button>
+                        <span class="text-xs text-gray-500">1 response requested</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message 3: Architect Response to Product Owner -->
+            <div class="relative agent-architect">
+                <div class="branch-line"></div>
+                <div class="connection-node"></div>
+                <div class="message-card">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
+                                <i data-lucide="layout" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">System Architect</div>
+                                <div class="text-xs text-gray-500 flex items-center gap-1">
+                                    10:32 AM • 
+                                    <i data-lucide="arrow-left" class="w-3 h-3"></i>
+                                    Responding to Product Owner
+                                </div>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-lg mb-3">
+                        <div class="text-xs text-blue-700 font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="quote" class="w-3 h-3"></i>
+                            Referenced from Product Owner:
+                        </div>
+                        <div class="text-sm text-blue-900 italic">"Let me ask the architect about technical feasibility..."</div>
+                    </div>
+                    <div class="text-gray-700 leading-relaxed">
+                        <p class="mb-2">"From an architectural perspective, this is definitely feasible. I recommend:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>Microservices architecture for scalability</li>
+                            <li>Real-time WebSocket connections for live collaboration</li>
+                            <li>Separate AI service for task suggestions using ML models</li>
+                            <li>PostgreSQL for structured data, Redis for caching</li>
+                        </ul>
+                        <p class="mt-2">This will give us the flexibility to scale each component independently."</p>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <button class="text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
+                                <i data-lucide="corner-down-right" class="w-4 h-4"></i>
+                                Reply
+                            </button>
+                            <button class="text-sm text-gray-600 hover:text-gray-700 font-semibold flex items-center gap-1">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                                Ask Others
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message 4: User Follow-up to Multiple Agents -->
+            <div class="relative">
+                <div class="connection-node" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                <div class="message-card user-message">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <i data-lucide="user" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">You</div>
+                                <div class="text-xs text-gray-500">10:35 AM</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="response-count" title="3 agents will respond">3</div>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-gray-700 leading-relaxed mb-3">
+                        "Great insights! How long would the initial MVP take to build? I'd like input from Product Owner, Architect, and Developer."
+                    </div>
+                    
+                    <!-- Selected Agents Indicator -->
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                        <div class="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1">
+                            <i data-lucide="send" class="w-3 h-3"></i>
+                            Sent to 3 agents:
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="agent-badge agent-badge-product-owner text-xs py-1">
+                                <i data-lucide="clipboard-list" class="w-3 h-3"></i>
+                                Product Owner
+                            </span>
+                            <span class="agent-badge agent-badge-architect text-xs py-1">
+                                <i data-lucide="layout" class="w-3 h-3"></i>
+                                Architect
+                            </span>
+                            <span class="agent-badge agent-badge-developer text-xs py-1">
+                                <i data-lucide="code" class="w-3 h-3"></i>
+                                Developer
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message 5: Developer Response -->
+            <div class="relative agent-developer">
+                <div class="branch-line"></div>
+                <div class="connection-node"></div>
+                <div class="message-card">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                                <i data-lucide="code" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">Developer</div>
+                                <div class="text-xs text-gray-500">10:36 AM • Responding to your message</div>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="text-gray-700 leading-relaxed">
+                        <p>"Based on the architect's design and PO's requirements, I estimate:</p>
+                        <div class="mt-3 bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-600">Frontend</div>
+                                    <div class="text-2xl font-bold text-green-600">3 weeks</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-600">Backend</div>
+                                    <div class="text-2xl font-bold text-green-600">4 weeks</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-2">Total MVP: ~6-8 weeks with proper sprints."</p>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <button class="text-sm text-purple-600 hover:text-purple-700 font-semibold flex items-center gap-1">
+                            <i data-lucide="corner-down-right" class="w-4 h-4"></i>
+                            Reply
+                        </button>
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <i data-lucide="users" class="w-3 h-3"></i>
+                            Part of multi-agent response (1/3)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow Summary Card -->
+            <div class="ml-12 mt-8 p-6 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl border-2 border-purple-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                        <i data-lucide="workflow" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800">Conversation Flow Summary</div>
+                        <div class="text-sm text-gray-600">Tracking agent interactions</div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-purple-600"></i>
+                        <span class="text-gray-700"><strong>You</strong> → Product Owner & Architect</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-blue-600"></i>
+                        <span class="text-gray-700"><strong>Product Owner</strong> → Architect (requested insight)</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-red-600"></i>
+                        <span class="text-gray-700"><strong>Architect</strong> → Provided technical design</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="arrow-right" class="w-4 h-4 text-purple-600"></i>
+                        <span class="text-gray-700"><strong>You</strong> → Product Owner, Architect & Developer (multi-agent)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Input Area -->
+        <div class="sticky bottom-0 bg-white rounded-2xl shadow-2xl p-6 border-2 border-gray-200">
+            <div class="mb-4">
+                <div class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="users-2" class="w-4 h-4 text-purple-600"></i>
+                    Quick Select Agents:
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <div class="agent-badge agent-badge-product-owner">
+                        <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+                        Product Owner
+                    </div>
+                    <div class="agent-badge agent-badge-scrum-master">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        Scrum Master
+                    </div>
+                    <div class="agent-badge agent-badge-developer selected">
+                        <i data-lucide="code" class="w-4 h-4"></i>
+                        Developer
+                        <i data-lucide="check" class="w-3 h-3"></i>
+                    </div>
+                    <div class="agent-badge agent-badge-architect selected">
+                        <i data-lucide="layout" class="w-4 h-4"></i>
+                        Architect
+                        <i data-lucide="check" class="w-3 h-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <textarea 
+                    class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-purple-500 focus:outline-none resize-none"
+                    rows="2"
+                    placeholder="Type your message... (will be sent to 2 selected agents)"
+                ></textarea>
+                <button class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                    Send
+                </button>
+            </div>
+            <div class="mt-2 text-xs text-gray-500 flex items-center gap-4">
+                <span class="flex items-center gap-1">
+                    <i data-lucide="info" class="w-3 h-3"></i>
+                    Press Ctrl+Enter to send
+                </span>
+                <span class="flex items-center gap-1">
+                    <i data-lucide="at-sign" class="w-3 h-3"></i>
+                    @mention agents in your message
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Demo interactivity
+        document.querySelectorAll('.agent-badge').forEach(badge => {
+            badge.addEventListener('click', function() {
+                this.classList.toggle('selected');
+                
+                // Update send button text
+                const selectedCount = document.querySelectorAll('.agent-badge.selected').length;
+                const sendButtons = document.querySelectorAll('button');
+                sendButtons.forEach(btn => {
+                    if (btn.textContent.includes('Send')) {
+                        const icon = btn.querySelector('i');
+                        btn.innerHTML = '';
+                        btn.appendChild(icon);
+                        btn.appendChild(document.createTextNode(selectedCount > 0 ? ` Send to ${selectedCount} Agent${selectedCount > 1 ? 's' : ''}` : ' Send'));
+                    }
+                });
+                
+                lucide.createIcons();
+            });
+        });
+    </script>
+</body>
+</html>
