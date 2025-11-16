@@ -55,6 +55,11 @@
             margin-left: 8px;
             font-size: 0.75rem;
         }
+        /* Style for disabled buttons */
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
@@ -156,7 +161,7 @@
                                 </label>
                                 <input type="text" id="repoInput" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="owner/repo">
                             </div>
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="syncMetadata()">
+                            <button id="syncButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="syncMetadata()">
                                 <i class="fas fa-sync"></i> Sync Metadata
                             </button>
                         </div>
@@ -174,7 +179,7 @@
                                         <option value="main">main (default)</option>
                                     </select>
                                 </div>
-                                <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="cloneRepository()">
+                                <button id="cloneButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="cloneRepository()">
                                     <i class="fas fa-download"></i> Clone Full Repository
                                 </button>
                             </div>
@@ -196,7 +201,23 @@
                     </div>
 
                     <div class="hidden grid grid-cols-4 gap-4 mb-6" id="statsGrid">
+                        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg p-6">
+                            <div class="text-3xl font-bold mb-2" id="statFiles">0</div>
+                            <div class="text-sm opacity-90"><i class="fas fa-file"></i> Files</div>
                         </div>
+                        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg p-6">
+                            <div class="text-3xl font-bold mb-2" id="statSize">0 KB</div>
+                            <div class="text-sm opacity-90"><i class="fas fa-database"></i> Total Size</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl shadow-lg p-6">
+                            <div class="text-3xl font-bold mb-2" id="statCommits">0</div>
+                            <div class="text-sm opacity-90"><i class="fas fa-code-commit"></i> Commits</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-xl shadow-lg p-6">
+                            <div class="text-3xl font-bold mb-2" id="statBranches">0</div>
+                            <div class="text-sm opacity-90"><i class="fas fa-code-branch"></i> Branches</div>
+                        </div>
+                    </div>
 
                     <div class="bg-white rounded-xl shadow-lg p-6">
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Console Output</h3>
@@ -219,7 +240,7 @@
                                     <span>No file selected</span>
                                 </div>
                                 <div class="flex gap-3">
-                                    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" onclick="saveFile()" id="saveBtn" disabled>
+                                    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="saveFile()" id="saveBtn" disabled>
                                         <i class="fas fa-save"></i> Save Changes
                                     </button>
                                 </div>
@@ -240,7 +261,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Commit Message</label>
                                 <textarea id="commitMessage" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors resize-none" rows="4" placeholder="Describe your changes..."></textarea>
                             </div>
-                            <button class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2" onclick="commitAndPushAll()">
+                            <button class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2" onclick="commitAndPushAll()" id="commitButton">
                                 <i class="fas fa-upload"></i> Commit & Push All Changes
                             </button>
                         </div>
@@ -297,7 +318,7 @@
                         <div class="grid grid-cols-[1fr_1fr_auto] gap-4">
                             <input type="text" id="newBranchName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="new-branch-name">
                             <input type="text" id="newBranchSource" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Source branch (e.g., main)">
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="createNewBranch()">
+                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="createNewBranch()" id="createBranchButton">
                                 <i class="fas fa-plus"></i> Create
                             </button>
                         </div>
@@ -408,7 +429,7 @@
                         <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
                             <p class="text-sm text-yellow-700"><i class="fas fa-info-circle"></i> Authentication required to view collaborators</p>
                         </div>
-                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" onclick="loadCollaborators()" id="loadCollabBtn" disabled>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="loadCollaborators()" id="loadCollabBtn" disabled>
                             <i class="fas fa-sync"></i> Load Collaborators
                         </button>
                         <div id="collaboratorsList" class="mt-4"></div>
@@ -498,60 +519,67 @@
         // DB operations (TODO: Refactor to use repo/branch keys)
         function initDB() {
             return new Promise((resolve, reject) => {
-                // Version 2 for new 'isDirty' index
-                const request = indexedDB.open('GitHubProDB', 2); 
+                // FIXED: Incremented version to 3 to force schema upgrade for all users
+                const request = indexedDB.open('GitHubProDB', 3); 
                 
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    db = request.result;
+                request.onerror = (event) => reject(event.target.error);
+                request.onsuccess = (event) => {
+                    db = event.target.result;
                     resolve(db);
                 };
                 
                 request.onupgradeneeded = (event) => {
+                    log('Database schema upgrade needed...');
                     const db = event.target.result;
                     
+                    let fileStore;
                     if (!db.objectStoreNames.contains('files')) {
-                        // TODO: Key should be [repoFullName, branch, path]
-                        const fileStore = db.createObjectStore('files', { keyPath: 'path' });
-                        // Add index for 'isDirty' to quickly find changes
+                        fileStore = db.createObjectStore('files', { keyPath: 'path' });
+                        log('  > "files" object store created.');
+                    } else {
+                        fileStore = event.target.transaction.objectStore('files');
+                    }
+                    
+                    // FIXED: This checks if the index *already exists* before trying to create it
+                    if (!fileStore.indexNames.contains('isDirty')) {
                         fileStore.createIndex('isDirty', 'isDirty', { unique: false });
+                        log('  > "isDirty" index created.');
                     }
+                    
                     if (!db.objectStoreNames.contains('metadata')) {
-                         // TODO: Key should be [repoFullName, key]
-                        db.createObjectStore('metadata', { keyPath: 'key' });
+                         db.createObjectStore('metadata', { keyPath: 'key' });
+                         log('  > "metadata" object store created.');
                     }
+                    log('Database upgrade complete.');
                 };
             });
         }
         
         async function saveToIndexedDB(storeName, data) {
             return new Promise((resolve, reject) => {
-                // TODO: Add repo/branch scoping
                 const transaction = db.transaction([storeName], 'readwrite');
                 const store = transaction.objectStore(storeName);
                 const request = store.put(data);
                 request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
+                request.onerror = (event) => reject(event.target.error);
             });
         }
         async function getFromIndexedDB(storeName, key) {
             return new Promise((resolve, reject) => {
-                // TODO: Add repo/branch scoping
                 const transaction = db.transaction([storeName], 'readonly');
                 const store = transaction.objectStore(storeName);
                 const request = store.get(key);
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
+                request.onerror = (event) => reject(event.target.error);
             });
         }
         async function getAllFromIndexedDB(storeName) {
             return new Promise((resolve, reject) => {
-                // TODO: Add repo/branch scoping
                 const transaction = db.transaction([storeName], 'readonly');
                 const store = transaction.objectStore(storeName);
                 const request = store.getAll();
                 request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
+                request.onerror = (event) => reject(event.target.error);
             });
         }
         async function clearIndexedDB(storeName) {
@@ -560,19 +588,23 @@
                 const store = transaction.objectStore(storeName);
                 const request = store.clear();
                 request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
+                request.onerror = (event) => reject(event.target.error);
             });
         }
         // Get all 'dirty' (modified) files
         async function getDirtyFiles() {
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(['files'], 'readonly');
-                const store = transaction.objectStore('files');
-                const index = store.index('isDirty');
-                const request = index.getAll(true); // Get all where isDirty = true
-                
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
+                try {
+                    const transaction = db.transaction(['files'], 'readonly');
+                    const store = transaction.objectStore('files');
+                    const index = store.index('isDirty'); // This line was failing
+                    const request = index.getAll(true); // Get all where isDirty = true
+                    
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (event) => reject(event.target.error);
+                } catch (error) {
+                    reject(error);
+                }
             });
         }
 
@@ -919,17 +951,22 @@
         // --- Repository & Cloning ---
 
         async function syncMetadata() {
+            const syncButton = document.getElementById('syncButton');
+            syncButton.disabled = true;
+            
             const token = document.getElementById('tokenInput').value.trim();
             const repoInput = document.getElementById('repoInput').value.trim();
 
             if (!repoInput) {
                 showToast('Please enter a repository URL', 'error');
+                syncButton.disabled = false;
                 return;
             }
 
             const parsed = parseRepoUrl(repoInput);
             if (!parsed) {
                 showToast('Invalid repository format', 'error');
+                syncButton.disabled = false;
                 return;
             }
 
@@ -952,8 +989,12 @@
                 // Get repo info
                 const repoInfo = await githubFetch('');
                 
-                // Get branches
-                const branches = await githubFetch('/branches');
+                // Set default branch
+                currentRepo.branch = repoInfo.default_branch;
+                await saveToIndexedDB('metadata', { key: 'currentRepo', value: currentRepo });
+
+                // Get branches and update all UI
+                await refreshBranchList(true); // true = select currentRepo.branch
 
                 // Populate UI
                 document.getElementById('repoMetadataOutput').textContent = `
@@ -961,22 +1002,7 @@
                     ${repoInfo.description || ''}
                     ⭐ ${repoInfo.stargazers_count}  |  🍴 ${repoInfo.forks_count}
                 `;
-
-                const branchSelect = document.getElementById('branchSelect');
-                branchSelect.innerHTML = '';
-                branches.forEach(branch => {
-                    const option = document.createElement('option');
-                    option.value = branch.name;
-                    option.textContent = branch.name;
-                    if (branch.name === repoInfo.default_branch) {
-                        option.selected = true;
-                    }
-                    branchSelect.appendChild(option);
-                });
                 
-                // Set default branch
-                currentRepo.branch = repoInfo.default_branch;
-
                 document.getElementById('repoMetadataSection').classList.remove('hidden');
                 showToast('Metadata synced!', 'success');
                 log('✓ Metadata synced');
@@ -986,10 +1012,14 @@
                 showToast('Sync failed: ' + error.message, 'error');
             } finally {
                 hideLoading();
+                syncButton.disabled = false;
             }
         }
         
         async function cloneRepository() {
+            const cloneButton = document.getElementById('cloneButton');
+            cloneButton.disabled = true;
+            
             const selectedBranch = document.getElementById('branchSelect').value;
             currentRepo.branch = selectedBranch;
             
@@ -1050,7 +1080,7 @@
                             });
                             downloaded++;
                         } catch (error) {
-                            log(`⚠️  Failed: ${file.path}`, 'text-red-400');
+                            log(`⚠️  Failed: ${file.path} - ${error.message}`, 'text-red-400');
                         }
                     }));
 
@@ -1066,8 +1096,8 @@
                 log(`✓ Clone completed: ${downloaded} files downloaded`);
                 showToast('Repository cloned successfully!', 'success');
                 
-                updateRepositoryUI();
-                loadFileTree();
+                await updateRepositoryUI();
+                await loadFileTree();
                 
                 setTimeout(() => {
                     document.getElementById('cloneProgress').classList.add('hidden');
@@ -1078,6 +1108,7 @@
                 showToast('Clone failed: ' + error.message, 'error');
             } finally {
                 hideLoading();
+                cloneButton.disabled = false;
             }
         }
         
@@ -1101,14 +1132,15 @@
             const files = await getAllFromIndexedDB('files');
             const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
             
+            // FIXED: Added null checks just in case elements aren't visible
             document.getElementById('statFiles').textContent = files.length;
             document.getElementById('statSize').textContent = (totalSize / 1024).toFixed(2) + ' KB';
             document.getElementById('statsGrid').classList.remove('hidden');
 
             // Load additional stats
-            loadCommits();
-            loadBranches();
-            loadRepoInfo(); // Load repo info for the info tab
+            await loadCommits();
+            await loadBranches(); // This now updates statBranches
+            await loadRepoInfo(); // Load repo info for the info tab
         }
 
         // --- File Tree & Editor ---
@@ -1159,6 +1191,7 @@
                     } else {
                         div.innerHTML = `<i class="fas fa-folder text-yellow-500 text-xs"></i><span class="text-sm font-medium">${key}</span>`;
                         const childContainer = document.createElement('div');
+                        childContainer.style.display = 'none'; // Folders start closed
                         div.onclick = (e) => {
                             e.stopPropagation();
                             const icon = div.querySelector('i');
@@ -1186,19 +1219,29 @@
             renderTree(structure, treeContainer);
             
             // Also refresh the Source Control change list
-            updateChangedFilesList();
+            await updateChangedFilesList();
         }
         
         async function updateChangedFilesList() {
-            const dirtyFiles = await getDirtyFiles();
             const container = document.getElementById('changedFilesList');
+            let dirtyFiles = [];
+            try {
+                dirtyFiles = await getDirtyFiles();
+            } catch (error) {
+                console.error("Failed to get dirty files list:", error);
+                container.innerHTML = '<div class="text-center text-red-400 py-8">Error loading changes</div>';
+                return;
+            }
+
             container.innerHTML = '';
 
             if (dirtyFiles.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 py-8">No changes detected</div>';
+                document.getElementById('commitButton').disabled = true;
                 return;
             }
             
+            document.getElementById('commitButton').disabled = false;
             dirtyFiles.forEach(file => {
                 const div = document.createElement('div');
                 div.className = 'bg-gray-50 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-100';
@@ -1280,7 +1323,15 @@
                     return;
                 }
 
-                const content = atob(file.content);
+                let content = '';
+                try {
+                    content = atob(file.content);
+                } catch (e) {
+                    log(`⚠️  Could not decode file: ${path}. It may be binary.`, 'text-yellow-400');
+                    showToast('Could not open file (may be binary)', 'error');
+                    return;
+                }
+
 
                 // Set global state
                 currentFile = {
@@ -1352,7 +1403,7 @@
                 log(`✓ Saved: ${currentFile.path}`);
                 
                 // Refresh file tree to show 'M' indicator
-                loadFileTree();
+                await loadFileTree();
 
             } catch (error) {
                 showToast('Save failed: ' + error.message, 'error');
@@ -1421,20 +1472,26 @@
         // --- Source Control ---
 
         async function commitAndPushAll() {
+            const commitButton = document.getElementById('commitButton');
+            commitButton.disabled = true;
+            
             if (!checkPermission('write')) {
                 showToast('Authentication required to push changes', 'error');
+                commitButton.disabled = false;
                 return;
             }
 
             const message = document.getElementById('commitMessage').value.trim();
             if (!message) {
                 showToast('Please enter a commit message', 'error');
+                commitButton.disabled = false;
                 return;
             }
             
             const dirtyFiles = await getDirtyFiles();
             if (dirtyFiles.length === 0) {
                 showToast('No changes to commit', 'info');
+                commitButton.disabled = false; // Re-enable, as there's nothing to do
                 return;
             }
 
@@ -1479,13 +1536,10 @@
                 
                 // 8. Success! Update local IndexedDB
                 log(`7. Updating local database...`);
-                for (const file of dirtyFiles) {
+                for (let i = 0; i < dirtyFiles.length; i++) {
+                    const file = dirtyFiles[i];
                     file.isDirty = false;
-                    // Find the new SHA for this file
-                    const newEntry = newTree.tree.find(item => item.path === file.path);
-                    if (newEntry) {
-                        file.sha = newEntry.sha;
-                    }
+                    file.sha = newBlobs[i].sha; // Update SHA to the blob SHA
                     await saveToIndexedDB('files', file);
                 }
                 
@@ -1494,21 +1548,75 @@
                 
                 // Clear UI
                 document.getElementById('commitMessage').value = '';
-                loadFileTree(); // Reloads tree (removes 'M') and source control list
+                await loadFileTree(); // Reloads tree (removes 'M') and source control list
 
             } catch (error) {
-                // **FIXED THE SYNTAX ERROR HERE**
                 showToast('Push failed: ' + error.message, 'error');
                 log(`✗ Push failed: ${error.message}`, 'text-red-400');
                 console.error(error);
             } finally {
                 hideLoading();
+                // Button state will be reset by loadFileTree/updateChangedFilesList
+            }
+        }
+        
+        // NEW: Central function to refresh all branch UIs
+        async function refreshBranchList(selectCurrent = false) {
+            if (!currentRepo.owner) return;
+            
+            try {
+                const branches = await githubFetch('/branches');
+                
+                // Update stat
+                document.getElementById('statBranches').textContent = branches.length;
+
+                // Update "Branches" tab list
+                const listContainer = document.getElementById('branchesList');
+                listContainer.innerHTML = '';
+                branches.forEach(branch => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-500';
+                    const isCurrent = branch.name === currentRepo.branch;
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2 font-medium text-gray-800 mb-2">
+                            <i class="fas fa-code-branch text-indigo-600"></i>
+                            ${branch.name}
+                            ${isCurrent ? '<span class="bg-indigo-600 text-white px-2 py-1 rounded text-xs ml-2">current</span>' : ''}
+                        </div>
+                        <div class="font-mono text-xs text-gray-500">
+                            ${branch.commit.sha.substring(0, 7)}
+                        </div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+
+                // Update "Repository" tab dropdown
+                const branchSelect = document.getElementById('branchSelect');
+                branchSelect.innerHTML = '';
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.name;
+                    option.textContent = branch.name;
+                    if (selectCurrent && branch.name === currentRepo.branch) {
+                        option.selected = true;
+                    }
+                    branchSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Failed to load branches:', error);
+                document.getElementById('branchesList').innerHTML = `<p class="text-red-500">Failed to load branches.</p>`;
+                document.getElementById('branchSelect').innerHTML = `<option>Error loading</option>`;
             }
         }
         
         async function createNewBranch() {
+            const createButton = document.getElementById('createBranchButton');
+            createButton.disabled = true;
+
             if (!checkPermission('write')) {
                 showToast('Authentication required to create branches', 'error');
+                createButton.disabled = false;
                 return;
             }
             
@@ -1517,6 +1625,7 @@
 
             if (!newBranch) {
                 showToast('Please enter a new branch name', 'error');
+                createButton.disabled = false;
                 return;
             }
 
@@ -1542,13 +1651,17 @@
                 
                 showToast(`Branch '${newBranch}' created!`, 'success');
                 log(`✓ Branch created: ${newBranch}`);
-                loadBranches(); // Refresh branch list
+                
+                // FIXED: Set current branch to new branch and refresh all UI
+                currentRepo.branch = newBranch;
+                await refreshBranchList(true); // true = select new branch
 
             } catch (error) {
                 showToast('Failed to create branch: ' + error.message, 'error');
                 log(`✗ Branch creation failed: ${error.message}`, 'text-red-400');
             } finally {
                 hideLoading();
+                createButton.disabled = false;
             }
         }
 
@@ -1573,7 +1686,11 @@
                 for (const file of files) {
                     if (file.encoding !== 'base64') continue; 
                     
-                    const content = atob(file.content);
+                    let content;
+                    try {
+                        content = atob(file.content);
+                    } catch (e) { continue; } // Skip undecodable files
+                    
                     const lines = content.split('\n');
                     
                     if (file.path.toLowerCase().includes(query)) {
@@ -1661,35 +1778,10 @@
                 document.getElementById('commitsList').innerHTML = `<p class="text-red-500">Failed to load commits.</p>`;
             }
         }
-
+        
+        // Wrapper function to call the central refresh
         async function loadBranches() {
-            if (!currentRepo.owner) return;
-            try {
-                const branches = await githubFetch('/branches');
-                const container = document.getElementById('branchesList');
-                container.innerHTML = '';
-                document.getElementById('statBranches').textContent = branches.length;
-
-                branches.forEach(branch => {
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-500';
-                    const isCurrent = branch.name === currentRepo.branch;
-                    div.innerHTML = `
-                        <div class="flex items-center gap-2 font-medium text-gray-800 mb-2">
-                            <i class="fas fa-code-branch text-indigo-600"></i>
-                            ${branch.name}
-                            ${isCurrent ? '<span class="bg-indigo-600 text-white px-2 py-1 rounded text-xs ml-2">current</span>' : ''}
-                        </div>
-                        <div class="font-mono text-xs text-gray-500">
-                            ${branch.commit.sha.substring(0, 7)}
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (error) {
-                console.error('Failed to load branches:', error);
-                document.getElementById('branchesList').innerHTML = `<p class="text-red-500">Failed to load branches.</p>`;
-            }
+            await refreshBranchList(true);
         }
 
         async function loadCollaborators() {
@@ -1815,7 +1907,33 @@
                 return;
             }
             const info = repoInfo.value;
-            // ... (rest of the function is unchanged)
+            document.getElementById('infoOutput').textContent = `
+Repository Information
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name: ${info.name}
+Full Name: ${info.full_name}
+Description: ${info.description || 'N/A'}
+Owner: ${info.owner.login}
+Private: ${info.private ? 'Yes' : 'No'}
+Default Branch: ${info.default_branch}
+
+Created: ${new Date(info.created_at).toLocaleString()}
+Updated: ${new Date(info.updated_at).toLocaleString()}
+Pushed: ${new Date(info.pushed_at).toLocaleString()}
+
+Stars: ⭐ ${info.stargazers_count}
+Forks: 🍴 ${info.forks_count}
+Watchers: 👀 ${info.watchers_count}
+Open Issues: 🐛 ${info.open_issues_count}
+
+Size: ${(info.size / 1024).toFixed(2)} MB
+Language: ${info.language || 'N/A'}
+License: ${info.license?.name || 'N/A'}
+
+Homepage: ${info.homepage || 'N/A'}
+Clone URL: ${info.clone_url}
+            `;
         }
 
         // --- Initialize ---
@@ -1823,6 +1941,7 @@
         window.addEventListener('load', async () => {
             try {
                 await initDB();
+                log('✓ Database initialized');
                 
                 // Load saved repo
                 const savedRepo = await getFromIndexedDB('metadata', 'currentRepo');
@@ -1839,7 +1958,7 @@
                     }
                     
                     await updateRepositoryUI();
-                    await loadFileTree(); // This will now show dirty files
+                    await loadFileTree();
                     
                     log('✓ Loaded cached repository');
                 }
@@ -1851,7 +1970,7 @@
                     document.getElementById('gitUserEmail').value = gitConfig.value.email;
                 }
 
-                showStorageInfo();
+                await showStorageInfo();
                 log('🚀 GitHub Pro Client Ready!');
                 
                 initMonacoEditor().catch(error => {
@@ -1860,6 +1979,8 @@
                 
             } catch (error) {
                 console.error('Initialization error:', error);
+                log(`CRITICAL ERROR: ${error.message}`, 'text-red-400');
+                showToast(`Initialization failed: ${error.message}`, 'error');
             }
         });
     </script>
