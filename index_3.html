@@ -518,8 +518,8 @@
 
         function initDB() {
             return new Promise((resolve, reject) => {
-                // Version 3: Ensures 'isDirty' index is created
-                const request = indexedDB.open('GitHubProDB', 3); 
+                // Version 4: Adds data migration to ensure all files have the 'isDirty' property for index integrity.
+                const request = indexedDB.open('GitHubProDB', 4); 
                 
                 request.onerror = (event) => reject(event.target.error);
                 request.onsuccess = (event) => {
@@ -530,19 +530,40 @@
                 request.onupgradeneeded = (event) => {
                     log('Database schema upgrade needed...');
                     const db = event.target.result;
+                    const transaction = event.target.transaction; // Get the transaction for data migration
                     
                     let fileStore;
                     if (!db.objectStoreNames.contains('files')) {
                         fileStore = db.createObjectStore('files', { keyPath: 'path' });
                         log('  > "files" object store created.');
                     } else {
-                        fileStore = event.target.transaction.objectStore('files');
+                        fileStore = transaction.objectStore('files');
                     }
                     
                     if (!fileStore.indexNames.contains('isDirty')) {
                         fileStore.createIndex('isDirty', 'isDirty', { unique: false });
                         log('  > "isDirty" index created.');
                     }
+
+                    // *** FIX for DataError: Migration Logic for V4 ***
+                    if (event.oldVersion < 4 && db.objectStoreNames.contains('files')) {
+                        log('  > Running data migration for v4: Ensuring all files have "isDirty" property.');
+                        const fileStoreForMigration = transaction.objectStore('files');
+                        
+                        // Use a cursor to iterate and update existing files
+                        fileStoreForMigration.openCursor().onsuccess = (e) => {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                const file = cursor.value;
+                                if (typeof file.isDirty !== 'boolean') {
+                                    file.isDirty = false; // Default to false if missing or invalid
+                                    cursor.update(file);
+                                }
+                                cursor.continue();
+                            }
+                        };
+                    }
+                    // *** END FIX ***
                     
                     if (!db.objectStoreNames.contains('metadata')) {
                          db.createObjectStore('metadata', { keyPath: 'key' });
@@ -595,7 +616,8 @@
                 try {
                     const transaction = db.transaction(['files'], 'readonly');
                     const store = transaction.objectStore('files');
-                    const index = store.index('isDirty'); // This line was failing
+                    // This line was causing issues if data was corrupt, fixed by V4 migration
+                    const index = store.index('isDirty'); 
                     const request = index.getAll(true); // Get all where isDirty = true
                     
                     request.onsuccess = () => resolve(request.result);
@@ -877,8 +899,10 @@
             });
             
             document.getElementById('view-' + viewName).classList.remove('hidden');
-            if (event && event.target) {
-                event.target.closest('.nav-item').classList.add('bg-indigo-600', 'border-indigo-500');
+            // Find the correct nav item to highlight
+            const navItem = document.querySelector(`.nav-item[onclick="switchView('${viewName}')"]`);
+            if (navItem) {
+                navItem.classList.add('bg-indigo-600', 'border-indigo-500');
             }
         }
         function showLoading(text = 'Processing...', subtext = 'Please wait') {
@@ -1049,7 +1073,7 @@
                 // Get tree
                 const treeData = await githubFetch(`/git/trees/${currentRepo.branch}?recursive=1`);
 
-                // FIXED: Filter out any blobs that don't have a path
+                // Filter out any blobs that don't have a path
                 const files = treeData.tree.filter(item => item.type === 'blob' && item.path);
                 
                 log(`✓ Found ${files.length} files`);
@@ -1075,7 +1099,7 @@
                                 encoding: fileData.encoding,
                                 size: fileData.size,
                                 sha: fileData.sha,
-                                isDirty: false // Track modification status
+                                isDirty: false // Track modification status (critical for the index)
                             });
                             downloaded++;
                         } catch (error) {
@@ -1096,7 +1120,7 @@
                 showToast('Repository cloned successfully!', 'success');
                 
                 await updateRepositoryUI();
-                await loadFileTree();
+                await loadFileTree(); // This should now succeed due to the DB migration
                 
                 setTimeout(() => {
                     document.getElementById('cloneProgress').classList.add('hidden');
@@ -1144,10 +1168,14 @@
         // --- File Tree & Editor ---
 
         async function loadFileTree() {
-            const tree = await getFromIndexedDB('metadata', 'tree');
-            if (!tree) return;
+            const treeData = await getFromIndexedDB('metadata', 'tree');
+            if (!treeData || !treeData.value) {
+                // If the tree isn't loaded, ensure the file tree shows a placeholder
+                document.getElementById('fileTree').innerHTML = '<div class="text-center text-gray-400 py-8">Clone a repository first</div>';
+                return;
+            }
             
-            const dirtyFiles = await getDirtyFiles();
+            const dirtyFiles = await getDirtyFiles(); // This call should now be safe
             const dirtyPaths = new Set(dirtyFiles.map(f => f.path));
 
             const treeContainer = document.getElementById('fileTree');
@@ -1214,7 +1242,7 @@
                 });
             };
 
-            const structure = buildTree(tree.value);
+            const structure = buildTree(treeData.value);
             renderTree(structure, treeContainer);
             
             // Also refresh the Source Control change list
@@ -1229,6 +1257,7 @@
             } catch (error) {
                 console.error("Failed to get dirty files list:", error);
                 container.innerHTML = '<div class="text-center text-red-400 py-8">Error loading changes</div>';
+                document.getElementById('commitButton').disabled = true; // Still need to disable the button
                 return;
             }
 
@@ -1736,11 +1765,15 @@
                 <div class="bg-gray-100 p-3 rounded font-mono text-sm text-gray-700 overflow-x-auto">${content}</div>
             `;
             div.onclick = () => {
-                switchView('files');
-                // Find the nav item for 'files' and click it to update the sidebar UI
-                document.querySelector('.nav-item[onclick="switchView(\'files\')"]').classList.add('bg-indigo-600', 'border-indigo-500');
-                document.querySelector('.nav-item[onclick="switchView(\'search\')"]').classList.remove('bg-indigo-600', 'border-indigo-500');
+                // Find the correct nav items to update the sidebar UI
+                document.querySelectorAll('.nav-item').forEach(n => {
+                    n.classList.remove('bg-indigo-600', 'border-indigo-500');
+                });
+                document.querySelector(`.nav-item[onclick="switchView('files')"]`).classList.add('bg-indigo-600', 'border-indigo-500');
                 
+                document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
+                document.getElementById('view-files').classList.remove('hidden');
+
                 setTimeout(() => openFile(filepath, null), 100); // Pass null for the event
             };
             resultsContainer.appendChild(div);
@@ -1868,7 +1901,7 @@
                 const files = await getAllFromIndexedDB('files');
                 const metadata = await getAllFromIndexedDB('metadata');
                 
-                const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+                const totalSize = files.reduce((sum, f => sum + (f.size || 0)), 0);
                 
                 const info = document.getElementById('storageInfo');
                 info.textContent = `
@@ -1940,7 +1973,7 @@ Clone URL: ${info.clone_url}
         window.addEventListener('load', async () => {
             try {
                 await initDB();
-                log('✓ Database initialized');
+                log('✓ Database initialized (Version 4)');
                 
                 // Load saved repo
                 const savedRepo = await getFromIndexedDB('metadata', 'currentRepo');
@@ -1960,6 +1993,9 @@ Clone URL: ${info.clone_url}
                     await loadFileTree();
                     
                     log('✓ Loaded cached repository');
+                } else {
+                    // Initialize with default view settings
+                    switchView('repo');
                 }
 
                 // Load settings
