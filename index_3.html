@@ -81,7 +81,7 @@
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('files')">
                     <i class="fas fa-folder w-5"></i>
-                    <span>Repo Explorer</span>
+                    <span>File Explorer</span>
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('source-control')">
                     <i class="fas fa-code-branch w-5"></i>
@@ -403,9 +403,20 @@
 
     <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+    <!-- Load JSZip and FileSaver BEFORE Monaco to prevent AMD conflicts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        // Prevent FileSaver from using AMD/define
+        window.define_backup = window.define;
+        window.define = undefined;
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        // Restore define for Monaco
+        window.define = window.define_backup;
+        window.define_backup = undefined;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
     <script>
         // --- Global State ---
         
@@ -721,7 +732,15 @@
             document.getElementById(`view-${view}`).classList.remove('hidden');
             
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'border-indigo-500'));
-            event.currentTarget.classList.add('active', 'border-indigo-500');
+            
+            // Find and activate the corresponding nav item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                const onclick = item.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${view}'`)) {
+                    item.classList.add('active', 'border-indigo-500');
+                }
+            });
 
             if (view === 'source-control') {
                 loadModifiedFilesList();
