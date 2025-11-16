@@ -79,7 +79,7 @@
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('files')">
                     <i class="fas fa-folder w-5"></i>
-                    <span>Repo Explorer</span>
+                    <span>File Explorer</span>
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('source-control')">
                     <i class="fas fa-code-branch w-5"></i>
@@ -1387,17 +1387,40 @@ Authentication: ${userPermissions.authenticated ? 'Active' : 'Not active'}
             }
             showLoading('Clearing data...', 'Please wait');
             try {
-                // Delete and recreate the database
+                // Close the database connection first
+                if (db) {
+                    db.close();
+                    log('✓ Database connection closed');
+                }
+                
+                // Delete the database
                 await new Promise((resolve, reject) => {
                     const deleteRequest = indexedDB.deleteDatabase('GitHubProDB');
-                    deleteRequest.onsuccess = () => resolve();
-                    deleteRequest.onerror = () => reject(deleteRequest.error);
+                    
+                    deleteRequest.onsuccess = () => {
+                        log('✓ Database deleted');
+                        resolve();
+                    };
+                    
+                    deleteRequest.onerror = (event) => {
+                        log('✗ Database deletion error');
+                        reject(event.target.error);
+                    };
+                    
+                    deleteRequest.onblocked = () => {
+                        log('⚠ Database deletion blocked - forcing reload');
+                        // If blocked, just reload anyway - the browser will handle it
+                        setTimeout(() => location.reload(), 500);
+                    };
                 });
+                
+                // Reload the page
                 location.reload();
             } catch (error) {
                 showToast('Clear failed: ' + error.message, 'error');
-            } finally {
                 hideLoading();
+                // Reload anyway after showing error
+                setTimeout(() => location.reload(), 1500);
             }
         }
 
