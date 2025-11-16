@@ -516,10 +516,9 @@
         
         // --- Database ---
 
-        // DB operations (TODO: Refactor to use repo/branch keys)
         function initDB() {
             return new Promise((resolve, reject) => {
-                // FIXED: Incremented version to 3 to force schema upgrade for all users
+                // Version 3: Ensures 'isDirty' index is created
                 const request = indexedDB.open('GitHubProDB', 3); 
                 
                 request.onerror = (event) => reject(event.target.error);
@@ -540,7 +539,6 @@
                         fileStore = event.target.transaction.objectStore('files');
                     }
                     
-                    // FIXED: This checks if the index *already exists* before trying to create it
                     if (!fileStore.indexNames.contains('isDirty')) {
                         fileStore.createIndex('isDirty', 'isDirty', { unique: false });
                         log('  > "isDirty" index created.');
@@ -1051,7 +1049,8 @@
                 // Get tree
                 const treeData = await githubFetch(`/git/trees/${currentRepo.branch}?recursive=1`);
 
-                const files = treeData.tree.filter(item => item.type === 'blob');
+                // FIXED: Filter out any blobs that don't have a path
+                const files = treeData.tree.filter(item => item.type === 'blob' && item.path);
                 
                 log(`✓ Found ${files.length} files`);
                 await saveToIndexedDB('metadata', { key: 'tree', value: treeData.tree });
@@ -1132,7 +1131,6 @@
             const files = await getAllFromIndexedDB('files');
             const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
             
-            // FIXED: Added null checks just in case elements aren't visible
             document.getElementById('statFiles').textContent = files.length;
             document.getElementById('statSize').textContent = (totalSize / 1024).toFixed(2) + ' KB';
             document.getElementById('statsGrid').classList.remove('hidden');
@@ -1158,6 +1156,7 @@
             const buildTree = (items) => {
                 const structure = {};
                 items.forEach(item => {
+                    if (!item.path) return; // Safeguard
                     const parts = item.path.split('/');
                     let current = structure;
                     
