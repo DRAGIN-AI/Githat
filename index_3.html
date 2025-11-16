@@ -81,7 +81,7 @@
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('files')">
                     <i class="fas fa-folder w-5"></i>
-                    <span>File Explorer</span>
+                    <span>Repo Explorer</span>
                 </div>
                 <div class="nav-item flex items-center gap-3 px-6 py-3 cursor-pointer hover:bg-gray-800 transition-colors border-l-4 border-transparent hover:border-indigo-500" onclick="switchView('source-control')">
                     <i class="fas fa-code-branch w-5"></i>
@@ -161,180 +161,160 @@
                                 </label>
                                 <input type="text" id="repoInput" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="owner/repo">
                             </div>
-                            <button id="syncButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="syncMetadata()">
-                                <i class="fas fa-sync"></i> Sync Metadata
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-code-branch"></i> Branch
+                                </label>
+                                <select id="branchSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors">
+                                    <option value="">Select a repository first</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button id="syncButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="syncMetadata()">
+                                <i class="fas fa-sync"></i> Sync Repository Info
+                            </button>
+                            <button id="cloneButton" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="cloneRepository()">
+                                <i class="fas fa-download"></i> Clone Repository
                             </button>
                         </div>
-                        
-                        <div id="repoMetadataSection" class="hidden">
-                            <div class="bg-gray-50 rounded-lg p-4 mb-6" id="repoMetadataOutput">
-                                </div>
 
-                            <div class="grid grid-cols-2 gap-4 mb-5">
+                        <div id="cloneProgress" class="hidden mt-6 bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700" id="cloneProgressText">Preparing...</span>
+                                <span class="text-sm text-gray-500" id="cloneProgressPercent">0%</span>
+                            </div>
+                            <div class="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="cloneProgressBar" class="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300 progress-shimmer" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="statsGrid" class="hidden grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file-code text-2xl text-indigo-600"></i>
+                                </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        <i class="fas fa-code-branch"></i> Select Branch
-                                    </label>
-                                    <select id="branchSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors bg-white">
-                                        <option value="main">main (default)</option>
-                                    </select>
+                                    <p class="text-gray-500 text-sm">Files</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="statFiles">0</p>
                                 </div>
-                                <button id="cloneButton" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 self-end" onclick="cloneRepository()">
-                                    <i class="fas fa-download"></i> Clone Full Repository
-                                </button>
                             </div>
-                            
-                            <p class="text-sm text-gray-600 mb-4 text-center">--- OR ---</p>
-
-                            <button class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="browseFilesOnly()">
-                                <i class="fas fa-folder-open"></i> Browse Files (Download on-demand)
-                            </button>
                         </div>
-
-
-                        <div id="cloneProgress" class="hidden my-5">
-                            <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300 relative progress-shimmer" id="cloneProgressBar" style="width: 0%"></div>
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-hdd text-2xl text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500 text-sm">Total Size</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="statSize">0 KB</p>
+                                </div>
                             </div>
-                            <p class="text-sm text-gray-600 mt-2" id="cloneProgressText">Preparing...</p>
                         </div>
-                    </div>
-
-                    <div class="hidden grid grid-cols-4 gap-4 mb-6" id="statsGrid">
-                        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg p-6">
-                            <div class="text-3xl font-bold mb-2" id="statFiles">0</div>
-                            <div class="text-sm opacity-90"><i class="fas fa-file"></i> Files</div>
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-code-branch text-2xl text-pink-600"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500 text-sm">Branches</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="statBranches">0</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-xl shadow-lg p-6">
-                            <div class="text-3xl font-bold mb-2" id="statSize">0 KB</div>
-                            <div class="text-sm opacity-90"><i class="fas fa-database"></i> Total Size</div>
-                        </div>
-                        <div class="bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-xl shadow-lg p-6">
-                            <div class="text-3xl font-bold mb-2" id="statCommits">0</div>
-                            <div class="text-sm opacity-90"><i class="fas fa-code-commit"></i> Commits</div>
-                        </div>
-                        <div class="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-xl shadow-lg p-6">
-                            <div class="text-3xl font-bold mb-2" id="statBranches">0</div>
-                            <div class="text-sm opacity-90"><i class="fas fa-code-branch"></i> Branches</div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Console Output</h3>
-                        <div class="bg-gray-900 text-green-400 p-5 rounded-lg font-mono text-sm h-96 overflow-y-auto" id="consoleOutput"></div>
                     </div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-files">
-                    <div class="grid grid-cols-[300px_1fr] gap-6 h-[calc(100vh-140px)]">
-                        <div class="bg-white rounded-xl shadow-lg p-4 overflow-y-auto">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">File Tree</h3>
-                            <div id="fileTree" class="text-sm">
-                                <div class="text-center text-gray-400 py-8">Clone a repository first</div>
-                            </div>
+                    <div class="grid grid-cols-2 gap-6 h-full">
+                        <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-folder-tree text-indigo-600"></i>
+                                File Tree
+                            </h2>
+                            <div id="fileTree" class="flex-1 overflow-y-auto text-sm font-mono"></div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-lg flex flex-col overflow-hidden">
-                            <div class="bg-gray-800 text-white px-6 py-4 flex items-center justify-between">
-                                <div class="flex items-center gap-3 font-medium" id="editorFilename">
-                                    <i class="fas fa-file-code"></i>
-                                    <span>No file selected</span>
-                                </div>
-                                <div class="flex gap-3">
-                                    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="saveFile()" id="saveBtn" disabled>
-                                        <i class="fas fa-save"></i> Save Changes
-                                    </button>
-                                </div>
+                        <div class="bg-white rounded-xl shadow-lg p-6 flex flex-col">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-code text-purple-600"></i>
+                                <span id="editorFileName">Select a file</span>
+                            </h2>
+                            <div id="editor" class="flex-1 border border-gray-200 rounded-lg overflow-hidden"></div>
+                            <div class="mt-4 flex gap-2">
+                                <button id="saveFileBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" disabled onclick="saveFileChanges()">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                                <button id="discardBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" disabled onclick="discardFileChanges()">
+                                    <i class="fas fa-times"></i> Discard
+                                </button>
                             </div>
-                            <div id="editor" class="flex-1"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-source-control">
-                    <div class="grid grid-cols-[350px_1fr] gap-6">
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                            <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                                <i class="fas fa-code-branch text-indigo-600"></i>
-                                Source Control
-                            </h2>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Commit Message</label>
-                                <textarea id="commitMessage" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors resize-none" rows="4" placeholder="Describe your changes..."></textarea>
-                            </div>
-                            <button class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2" onclick="commitAndPushAll()" id="commitButton">
-                                <i class="fas fa-upload"></i> Commit & Push All Changes
-                            </button>
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                            <i class="fas fa-code-branch text-indigo-600"></i>
+                            Source Control
+                        </h2>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-sm font-medium text-gray-700 mb-3">Modified Files</h3>
+                            <div id="modifiedFilesList" class="space-y-2 max-h-96 overflow-y-auto"></div>
                         </div>
 
-                        <div class="bg-white rounded-xl shadow-lg p-6">
-                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Changes</h3>
-                             <div id="changedFilesList" class="space-y-2">
-                                <div class="text-center text-gray-400 py-8">No changes detected</div>
-                             </div>
+                        <div class="border-t pt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-message"></i> Commit Message
+                            </label>
+                            <textarea id="commitMessage" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" rows="4" placeholder="Describe your changes..."></textarea>
+                            <button id="commitButton" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="commitChanges()">
+                                <i class="fas fa-check"></i> Commit & Push
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-search">
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
                             <i class="fas fa-search text-indigo-600"></i>
                             Search Code
                         </h2>
-                        <div class="flex gap-4">
-                            <div class="flex-1 relative">
-                                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                                <input type="text" id="searchInput" class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Search for code, file names, content..." onkeypress="if(event.key==='Enter') searchCode()">
-                            </div>
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="searchCode()">
-                                <i class="fas fa-search"></i> Search
-                            </button>
+                        
+                        <div class="mb-5">
+                            <input type="text" id="searchInput" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Search in repository...">
                         </div>
+                        
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="searchFiles()">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+
+                        <div id="searchResults" class="mt-6"></div>
                     </div>
-                    <div class="space-y-4" id="searchResults"></div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-commits">
                     <div class="bg-white rounded-xl shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-code-commit text-indigo-600"></i>
-                                Commit History
-                            </h2>
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="loadCommits()">
-                                <i class="fas fa-sync"></i> Refresh
-                            </button>
-                        </div>
-                        <div class="space-y-4" id="commitsList"></div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                            <i class="fas fa-code-commit text-indigo-600"></i>
+                            Recent Commits
+                        </h2>
+                        <div id="commitsList" class="space-y-4"></div>
                     </div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-branches">
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                            <i class="fas fa-plus text-indigo-600"></i>
-                            Create New Branch
-                        </h2>
-                        <div class="grid grid-cols-[1fr_1fr_auto] gap-4">
-                            <input type="text" id="newBranchName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="new-branch-name">
-                            <input type="text" id="newBranchSource" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Source branch (e.g., main)">
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="createNewBranch()" id="createBranchButton">
-                                <i class="fas fa-plus"></i> Create
-                            </button>
-                        </div>
-                    </div>
-                    
                     <div class="bg-white rounded-xl shadow-lg p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-code-branch text-indigo-600"></i>
-                                Existing Branches
-                            </h2>
-                            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="loadBranches()">
-                                <i class="fas fa-sync"></i> Refresh
-                            </button>
-                        </div>
-                        <div class="space-y-4" id="branchesList"></div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+                            <i class="fas fa-code-branch text-indigo-600"></i>
+                            Branches
+                        </h2>
+                        <div id="branchesList" class="space-y-3"></div>
                     </div>
                 </div>
 
@@ -344,193 +324,122 @@
                             <i class="fas fa-info-circle text-indigo-600"></i>
                             Repository Information
                         </h2>
-                        <div class="bg-gray-900 text-green-400 p-5 rounded-lg font-mono text-sm overflow-y-auto max-h-[600px]" id="infoOutput"></div>
+                        <pre id="infoOutput" class="text-sm text-gray-700 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded-lg overflow-x-auto"></pre>
                     </div>
                 </div>
-                
+
                 <div class="view-container hidden p-6" id="view-permissions">
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
                             <i class="fas fa-user-shield text-indigo-600"></i>
-                            Permission Management
+                            User Permissions
                         </h2>
-
-                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                            <h4 class="font-semibold text-blue-800 mb-2">How Authentication Works</h4>
-                            <ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
-                                <li><strong>Public repos:</strong> No authentication needed - full read access</li>
-                                <li><strong>Private repos:</strong> Requires GitHub token with repo access</li>
-                                <li><strong>Write operations:</strong> Always require authentication (even for public repos)</li>
-                                <li>Each user authenticates with their own token for security</li>
-                            </ul>
-                        </div>
-
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Current Status</h3>
-                            <div id="currentPermissions" class="bg-gray-50 rounded-lg p-4">
-                                <p class="text-gray-500 text-sm">Clone a repository to view your permissions</p>
+                        <div id="permissionsInfo" class="space-y-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-2">Authentication Status:</p>
+                                <p class="font-semibold text-gray-800" id="permAuthStatus">Not authenticated</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-2">Username:</p>
+                                <p class="font-semibold text-gray-800" id="permUsername">-</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-2">Repository Permission:</p>
+                                <p class="font-semibold text-gray-800" id="permLevel">-</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-600 mb-2">Can Push:</p>
+                                <p class="font-semibold text-gray-800" id="permCanPush">-</p>
                             </div>
                         </div>
-
-                        <div class="mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Available Actions</h3>
-                            <div class="space-y-4">
-                                <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <i class="fas fa-check-circle text-green-600"></i>
-                                        <h4 class="font-semibold text-green-800">Without Token (Public Repos)</h4>
-                                    </div>
-                                    <p class="text-sm text-green-700">Clone, read files, search code, download ZIP, view commits/branches</p>
-                                </div>
-
-                                <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <i class="fas fa-key text-blue-600"></i>
-                                        <h4 class="font-semibold text-blue-800">With Token (Authenticated)</h4>
-                                    </div>
-                                    <p class="text-sm text-blue-700">Everything above PLUS: clone private repos, edit files, commit & push changes, view collaborators</o>
-                                </div>
-
-                                <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <i class="fas fa-exclamation-triangle text-yellow-600"></i>
-                                        <h4 class="font-semibold text-yellow-800">Disabled Features</h4>
-                                    </div>
-                                    <p class="text-sm text-yellow-700" id="disabledFeatures">Add a token to enable all features</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Setup Instructions</h3>
-                            <div class="bg-gray-50 rounded-lg p-4 space-y-3 text-sm">
-                                <div class="flex items-start gap-3">
-                                    <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
-                                    <p class="text-gray-700"><strong>For public repos:</strong> Just enter the repo URL and click Sync (no token needed)</p>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-                                    <p class="text-gray-700"><strong>For private repos or to push changes:</strong> Get a GitHub token (Settings → Developer settings → Personal access tokens)</p>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-                                    <p class="text-gray-700">Enter your token and click "Update" - permissions will be re-checked automatically</p>
-                                </div>
-                                <div class="flex items-start gap-3">
-                                    <span class="bg-indigo-600 text-white rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0 mt-0.5">4</span>
-                                    <p class="text-gray-700">You can add/update your token at any time, even after cloning</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-lg p-6" id="collaboratorsSection">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Repository Collaborators</h3>
-                        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
-                            <p class="text-sm text-yellow-700"><i class="fas fa-info-circle"></i> Authentication required to view collaborators</p>
-                        </div>
-                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="loadCollaborators()" id="loadCollabBtn" disabled>
-                            <i class="fas fa-sync"></i> Load Collaborators
-                        </button>
-                        <div id="collaboratorsList" class="mt-4"></div>
                     </div>
                 </div>
 
                 <div class="view-container hidden p-6" id="view-settings">
-                    <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
                         <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
                             <i class="fas fa-cog text-indigo-600"></i>
                             Settings
                         </h2>
-                        <div class="mb-5">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Git User Name</label>
-                            <input type="text" id="gitUserName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Your Name">
+                        
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user"></i> Git User Name
+                                </label>
+                                <input type="text" id="gitUserName" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="Your Name">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-envelope"></i> Git User Email
+                                </label>
+                                <input type="email" id="gitUserEmail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="your.email@example.com">
+                            </div>
                         </div>
-                        <div class="mb-5">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Git User Email</label>
-                            <input type="email" id="gitUserEmail" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors" placeholder="your@email.com">
-                        </div>
-                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2" onclick="saveSettings()">
+
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 mb-6" onclick="saveSettings()">
                             <i class="fas fa-save"></i> Save Settings
                         </button>
-                    </div>
 
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Storage Info</h3>
-                        <div class="bg-gray-900 text-green-400 p-5 rounded-lg font-mono text-sm mb-4" id="storageInfo">Calculating...</div>
-                        <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2" onclick="showStorageInfo()">
-                            <i class="fas fa-sync"></i> Refresh Storage Info
-                        </button>
+                        <div class="border-t pt-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Storage Information</h3>
+                            <pre id="storageInfo" class="text-sm text-gray-700 whitespace-pre-wrap font-mono bg-gray-50 p-4 rounded-lg"></pre>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="hidden fixed inset-0 bg-black bg-opacity-70 items-center justify-center z-50" id="loadingOverlay">
-        <div class="bg-white rounded-2xl p-10 text-center max-w-md">
-            <div class="w-16 h-16 border-4 border-gray-200 border-t-indigo-600 rounded-full mx-auto mb-6 spinner"></div>
-            <div class="text-xl font-semibold text-gray-800 mb-2" id="loadingText">Processing...</div>
-            <div class="text-sm text-gray-600" id="loadingSubtext">Please wait</div>
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <div class="flex flex-col items-center">
+                <div class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full spinner mb-4"></div>
+                <p class="text-lg font-semibold text-gray-800 mb-2" id="loadingTitle">Processing...</p>
+                <p class="text-sm text-gray-600" id="loadingText"></p>
+            </div>
         </div>
     </div>
 
-    <div class="fixed top-6 right-6 z-50 flex flex-col gap-3" id="toastContainer"></div>
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script>
-        var originalDefine = window.define;
-        window.define = undefined; // Hide AMD from FileSaver
-    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
-        window.define = originalDefine; // Restore AMD
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.js"></script>
-
-    <script>
-        // Global state
-        let db;
-        let currentRepo = {
-            owner: '',
-            repo: '',
-            branch: '',
-            token: ''
-        };
-        let userPermissions = {
-            permission: 'none', // none, read, write, admin
-            canPush: false,
-            canPull: true,
-            isOwner: false,
-            username: '',
-            authenticated: false
-        };
-        let monacoEditor;
-        let monacoInitPromise = null;
-        let currentFile = {
-            path: null,
-            originalContent: '' // Store original content to check for modifications
-        };
-        let fileModified = false; // Tracks if editor content has changed *since last load*
-
+        // --- Global State ---
         
-        // --- Database ---
+        let db;
+        let currentRepo = { owner: '', repo: '', branch: 'main', token: '' };
+        let userPermissions = {
+            authenticated: false,
+            username: 'Anonymous',
+            permission: 'read',
+            canPush: false
+        };
+        let monacoEditor = null;
+        let currentFile = null;
+        let fileTreeData = null;
 
-        function initDB() {
+        // --- IndexedDB Setup (Version 5) ---
+
+        async function initDB() {
             return new Promise((resolve, reject) => {
-                // Version 4: Adds data migration to ensure all files have the 'isDirty' property for index integrity.
-                const request = indexedDB.open('GitHubProDB', 4); 
+                const request = indexedDB.open('GitHubProDB', 5); // Incremented to v5
                 
-                request.onerror = (event) => reject(event.target.error);
                 request.onsuccess = (event) => {
                     db = event.target.result;
                     resolve(db);
                 };
                 
+                request.onerror = (event) => {
+                    reject(new Error('Failed to open database: ' + event.target.error));
+                };
+                
                 request.onupgradeneeded = (event) => {
                     log('Database schema upgrade needed...');
                     const db = event.target.result;
-                    const transaction = event.target.transaction; // Get the transaction for data migration
+                    const transaction = event.target.transaction;
                     
                     let fileStore;
                     if (!db.objectStoreNames.contains('files')) {
@@ -540,30 +449,42 @@
                         fileStore = transaction.objectStore('files');
                     }
                     
+                    // Create isDirty index if it doesn't exist
                     if (!fileStore.indexNames.contains('isDirty')) {
                         fileStore.createIndex('isDirty', 'isDirty', { unique: false });
                         log('  > "isDirty" index created.');
                     }
 
-                    // *** FIX for DataError: Migration Logic for V4 ***
-                    if (event.oldVersion < 4 && db.objectStoreNames.contains('files')) {
-                        log('  > Running data migration for v4: Ensuring all files have "isDirty" property.');
-                        const fileStoreForMigration = transaction.objectStore('files');
+                    // Migration logic for v5: Ensure all files have valid isDirty property
+                    if (event.oldVersion < 5 && db.objectStoreNames.contains('files')) {
+                        log('  > Running data migration for v5: Ensuring all files have valid "isDirty" property.');
                         
-                        // Use a cursor to iterate and update existing files
-                        fileStoreForMigration.openCursor().onsuccess = (e) => {
+                        const fileStoreForMigration = transaction.objectStore('files');
+                        const cursorRequest = fileStoreForMigration.openCursor();
+                        
+                        const migratedFiles = [];
+                        
+                        cursorRequest.onsuccess = (e) => {
                             const cursor = e.target.result;
                             if (cursor) {
                                 const file = cursor.value;
                                 if (typeof file.isDirty !== 'boolean') {
                                     file.isDirty = false; // Default to false if missing or invalid
+                                    migratedFiles.push(file.path);
                                     cursor.update(file);
                                 }
                                 cursor.continue();
+                            } else {
+                                if (migratedFiles.length > 0) {
+                                    log(`  > Migrated ${migratedFiles.length} files with missing isDirty property.`);
+                                }
                             }
                         };
+                        
+                        cursorRequest.onerror = (e) => {
+                            console.error('Migration cursor error:', e.target.error);
+                        };
                     }
-                    // *** END FIX ***
                     
                     if (!db.objectStoreNames.contains('metadata')) {
                          db.createObjectStore('metadata', { keyPath: 'key' });
@@ -573,7 +494,7 @@
                 };
             });
         }
-        
+
         async function saveToIndexedDB(storeName, data) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readwrite');
@@ -583,6 +504,7 @@
                 request.onerror = (event) => reject(event.target.error);
             });
         }
+
         async function getFromIndexedDB(storeName, key) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readonly');
@@ -592,15 +514,17 @@
                 request.onerror = (event) => reject(event.target.error);
             });
         }
+
         async function getAllFromIndexedDB(storeName) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readonly');
                 const store = transaction.objectStore(storeName);
                 const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
+                request.onsuccess = () => resolve(request.result || []);
                 request.onerror = (event) => reject(event.target.error);
             });
         }
+
         async function clearIndexedDB(storeName) {
             return new Promise((resolve, reject) => {
                 const transaction = db.transaction([storeName], 'readwrite');
@@ -610,20 +534,36 @@
                 request.onerror = (event) => reject(event.target.error);
             });
         }
-        // Get all 'dirty' (modified) files
+
         async function getDirtyFiles() {
             return new Promise((resolve, reject) => {
                 try {
+                    if (!db) {
+                        resolve([]);
+                        return;
+                    }
+                    
                     const transaction = db.transaction(['files'], 'readonly');
                     const store = transaction.objectStore('files');
-                    // This line was causing issues if data was corrupt, fixed by V4 migration
+                    
+                    // Check if the index exists before using it
+                    if (!store.indexNames.contains('isDirty')) {
+                        console.warn('isDirty index not found, returning empty array');
+                        resolve([]);
+                        return;
+                    }
+                    
                     const index = store.index('isDirty'); 
                     const request = index.getAll(true); // Get all where isDirty = true
                     
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = (event) => reject(event.target.error);
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = (event) => {
+                        console.error('getDirtyFiles error:', event.target.error);
+                        resolve([]); // Return empty array on error instead of rejecting
+                    };
                 } catch (error) {
-                    reject(error);
+                    console.error('getDirtyFiles exception:', error);
+                    resolve([]); // Return empty array on exception
                 }
             });
         }
@@ -658,430 +598,256 @@
                     showToast('Token removed - using public access mode', 'info');
                 }
             } else {
-                showToast('Token saved - will be used for next sync', 'info');
+                showToast('Token saved. Select a repository to check permissions.', 'info');
             }
         }
 
-        // GitHub API Helper
-        function getHeaders() {
-            const headers = {
-                'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28'
-            };
+        async function checkUserPermissions() {
+            if (!hasToken()) {
+                userPermissions.authenticated = false;
+                userPermissions.canPush = false;
+                userPermissions.permission = 'read';
+                userPermissions.username = 'Anonymous';
+                updatePermissionUI();
+                return;
+            }
+
+            try {
+                // Check authenticated user
+                const userResponse = await githubFetch('/user');
+                userPermissions.username = userResponse.login;
+                userPermissions.authenticated = true;
+
+                // Check repository permissions
+                try {
+                    const repoResponse = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}`);
+                    const permissions = repoResponse.permissions || {};
+                    
+                    if (permissions.admin) {
+                        userPermissions.permission = 'admin';
+                        userPermissions.canPush = true;
+                    } else if (permissions.push) {
+                        userPermissions.permission = 'write';
+                        userPermissions.canPush = true;
+                    } else {
+                        userPermissions.permission = 'read';
+                        userPermissions.canPush = false;
+                    }
+                } catch (repoError) {
+                    // If we can't get repo permissions, assume read-only
+                    userPermissions.permission = 'read';
+                    userPermissions.canPush = false;
+                }
+
+                await saveToIndexedDB('metadata', {
+                    key: 'userPermissions',
+                    value: userPermissions
+                });
+
+                updatePermissionUI();
+                log(`✓ User: ${userPermissions.username}`);
+                log(`✓ Permission level: ${userPermissions.permission}`);
+            } catch (error) {
+                userPermissions.authenticated = false;
+                userPermissions.canPush = false;
+                userPermissions.permission = 'invalid';
+                userPermissions.username = 'Invalid Token';
+                updatePermissionUI();
+                showToast('Invalid token or insufficient permissions', 'error');
+            }
+        }
+
+        function updatePermissionUI() {
+            const badge = document.getElementById('permissionBadge');
+            const authStatus = document.getElementById('authStatus');
             
+            if (userPermissions.authenticated) {
+                badge.innerHTML = `<span class="inline-flex items-center gap-1 bg-emerald-500 text-white text-xs px-2 py-1 rounded">
+                    <i class="fas fa-shield-alt"></i> ${userPermissions.permission}
+                </span>`;
+                authStatus.innerHTML = `<span class="text-xs text-gray-300">
+                    <i class="fas fa-user"></i> ${userPermissions.username}
+                </span>`;
+            } else {
+                badge.innerHTML = `<span class="inline-flex items-center gap-1 bg-gray-500 text-white text-xs px-2 py-1 rounded">
+                    <i class="fas fa-eye"></i> read-only
+                </span>`;
+                authStatus.innerHTML = `<span class="text-xs text-gray-300">
+                    <i class="fas fa-globe"></i> Public access
+                </span>`;
+            }
+
+            // Update permissions page
+            document.getElementById('permAuthStatus').textContent = userPermissions.authenticated ? 'Authenticated' : 'Not authenticated';
+            document.getElementById('permUsername').textContent = userPermissions.username;
+            document.getElementById('permLevel').textContent = userPermissions.permission;
+            document.getElementById('permCanPush').textContent = userPermissions.canPush ? 'Yes' : 'No';
+            document.getElementById('userInfo').textContent = userPermissions.authenticated ? userPermissions.username : '';
+            
+            if (userPermissions.authenticated) {
+                document.getElementById('userInfo').classList.remove('hidden');
+            }
+        }
+
+        // --- GitHub API ---
+
+        async function githubFetch(endpoint, options = {}) {
+            const headers = {
+                'Accept': 'application/vnd.github.v3+json',
+                ...(options.headers || {})
+            };
+
             if (hasToken()) {
                 headers['Authorization'] = `Bearer ${currentRepo.token}`;
             }
-            
-            return headers;
-        }
-        
-        // Base API fetcher
-        async function githubFetch(url, options = {}) {
-            const response = await fetch(`https://api.github.com/repos/${currentRepo.owner}/${currentRepo.repo}${url}`, {
+
+            const response = await fetch(`https://api.github.com${endpoint}`, {
                 ...options,
-                headers: getHeaders()
+                headers
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || `API error: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
             }
-            
-            // Handle 204 No Content
-            if (response.status === 204) {
-                return null;
-            }
-            
-            return response.json();
+
+            return await response.json();
         }
-
-        // Permission Management
-        async function checkUserPermissions() {
-            try {
-                if (!hasToken()) {
-                    // No token - public access mode
-                    userPermissions.authenticated = false;
-                    userPermissions.permission = 'read';
-                    userPermissions.canPush = false;
-                    userPermissions.canPull = true;
-                    userPermissions.isOwner = false;
-                    userPermissions.username = 'Anonymous (Public Access)';
-                    updatePermissionUI();
-                    log(`✓ Mode: Public access (no authentication)`);
-                    return;
-                }
-
-                // Get authenticated user info
-                const userResponse = await fetch('https://api.github.com/user', {
-                    headers: getHeaders()
-                });
-
-                if (!userResponse.ok) {
-                    throw new Error('Invalid token or authentication failed');
-                }
-
-                const user = await userResponse.json();
-                userPermissions.username = user.login;
-                userPermissions.authenticated = true;
-
-                // Get repository permissions
-                const repoData = await githubFetch(''); // Fetch base repo info
-                
-                // Check if user is owner
-                userPermissions.isOwner = repoData.owner.login === user.login;
-
-                // Determine permissions
-                if (userPermissions.isOwner || repoData.permissions?.admin) {
-                    userPermissions.permission = 'admin';
-                    userPermissions.canPush = true;
-                    userPermissions.canPull = true;
-                } else if (repoData.permissions?.push) {
-                    userPermissions.permission = 'write';
-                    userPermissions.canPush = true;
-                    userPermissions.canPull = true;
-                } else if (repoData.permissions?.pull) {
-                    userPermissions.permission = 'read';
-                    userPermissions.canPush = false;
-                    userPermissions.canPull = true;
-                } else {
-                    userPermissions.permission = 'none';
-                    userPermissions.canPush = false;
-                    userPermissions.canPull = false;
-                }
-
-                updatePermissionUI();
-                
-                log(`✓ User: ${userPermissions.username}`);
-                log(`✓ Permission level: ${userPermissions.permission}`);
-
-            } catch (error) {
-                log(`⚠️  Permission check failed: ${error.message}`, 'text-yellow-400');
-                userPermissions.authenticated = false;
-                userPermissions.permission = 'read';
-                userPermissions.canPush = false;
-                userPermissions.canPull = true;
-                userPermissions.username = 'Anonymous (Public Access)';
-                updatePermissionUI();
-            }
-        }
-        
-        function updatePermissionUI() {
-            const badge = document.getElementById('permissionBadge');
-            const userInfo = document.getElementById('userInfo');
-            const authStatus = document.getElementById('authStatus');
-            const currentPerms = document.getElementById('currentPermissions');
-            const loadCollabBtn = document.getElementById('loadCollabBtn');
-
-            let badgeClass = '';
-            let badgeIcon = '';
-            let badgeText = '';
-            let authStatusHtml = '';
-
-            if (!userPermissions.authenticated) {
-                badgeClass = 'bg-gray-500';
-                badgeIcon = 'fa-globe';
-                badgeText = 'Public Access';
-                authStatusHtml = '<div class="text-xs text-gray-400 mt-1"><i class="fas fa-info-circle"></i> No authentication</div>';
-            } else {
-                switch(userPermissions.permission) {
-                    case 'admin':
-                        badgeClass = 'bg-green-500';
-                        badgeIcon = 'fa-crown';
-                        badgeText = 'Admin';
-                        break;
-                    case 'write':
-                        badgeClass = 'bg-blue-500';
-                        badgeIcon = 'fa-pen';
-                        badgeText = 'Write Access';
-                        break;
-                    case 'read':
-                        badgeClass = 'bg-yellow-500';
-                        badgeIcon = 'fa-eye';
-                        badgeText = 'Read Only';
-                        break;
-                    default:
-                        badgeClass = 'bg-red-500';
-                        badgeIcon = 'fa-ban';
-                        badgeText = 'No Access';
-                }
-                authStatusHtml = '<div class="text-xs text-green-400 mt-1"><i class="fas fa-check-circle"></i> Authenticated</div>';
-            }
-
-            badge.innerHTML = `
-                <div class="${badgeClass} text-white px-3 py-1 rounded-lg text-xs font-medium flex items-center gap-2">
-                    <i class="fas ${badgeIcon}"></i>
-                    <span>${badgeText}</span>
-                </div>
-            `;
-
-            authStatus.innerHTML = authStatusHtml;
-
-            userInfo.textContent = `User: ${userPermissions.username}`;
-            userInfo.classList.remove('hidden');
-
-            if (currentPerms) {
-                const disabledFeatures = [];
-                if (!userPermissions.authenticated) {
-                    disabledFeatures.push('Private repositories', 'Push/Commit changes', 'View collaborators');
-                } else if (!userPermissions.canPush) {
-                    disabledFeatures.push('Push/Commit changes');
-                }
-
-                currentPerms.innerHTML = `
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Username:</span>
-                            <span class="font-medium">${userPermissions.username}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Authentication:</span>
-                            <span class="font-medium ${userPermissions.authenticated ? 'text-green-600' : 'text-gray-600'}">${userPermissions.authenticated ? 'Authenticated' : 'Public Access'}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Permission Level:</span>
-                            <span class="font-medium ${userPermissions.permission === 'admin' ? 'text-green-600' : userPermissions.permission === 'write' ? 'text-blue-600' : 'text-yellow-600'}">${userPermissions.permission.toUpperCase()}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Can Clone/Read:</span>
-                            <span class="font-medium ${userPermissions.canPull ? 'text-green-600' : 'text-red-600'}">${userPermissions.canPull ? 'Yes' : 'No'}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Can Edit/Push:</span>
-                            <span class="font-medium ${userPermissions.canPush ? 'text-green-600' : 'text-red-600'}">${userPermissions.canPush ? 'Yes' : 'No'}</span>
-                        </div>
-                    </div>
-                `;
-
-                const disabledFeaturesEl = document.getElementById('disabledFeatures');
-                if (disabledFeaturesEl) {
-                    if (disabledFeatures.length > 0) {
-                        disabledFeaturesEl.textContent = 'Disabled: ' + disabledFeatures.join(', ');
-                    } else {
-                        disabledFeaturesEl.textContent = 'All features enabled';
-                    }
-                }
-            }
-
-            const saveBtn = document.getElementById('saveBtn');
-            if (!userPermissions.canPush) {
-                if (saveBtn) saveBtn.title = 'Authentication required for write access';
-            }
-            if (loadCollabBtn) {
-                loadCollabBtn.disabled = !userPermissions.authenticated;
-            }
-            if (monacoEditor) {
-                monacoEditor.updateOptions({ readOnly: !userPermissions.canPush });
-            }
-        }
-        
-        function checkPermission(action) {
-            switch(action) {
-                case 'read':
-                    return userPermissions.canPull;
-                case 'write':
-                case 'push':
-                    return userPermissions.canPush && userPermissions.authenticated;
-                case 'admin':
-                    return userPermissions.permission === 'admin' && userPermissions.authenticated;
-                default:
-                    return false;
-            }
-        }
-
 
         // --- UI Functions ---
 
-        function switchView(viewName) {
-            document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(n => {
-                n.classList.remove('bg-indigo-600', 'border-indigo-500');
-            });
+        function switchView(view) {
+            document.querySelectorAll('.view-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${view}`).classList.remove('hidden');
             
-            document.getElementById('view-' + viewName).classList.remove('hidden');
-            // Find the correct nav item to highlight
-            const navItem = document.querySelector(`.nav-item[onclick="switchView('${viewName}')"]`);
-            if (navItem) {
-                navItem.classList.add('bg-indigo-600', 'border-indigo-500');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'border-indigo-500'));
+            event.currentTarget.classList.add('active', 'border-indigo-500');
+
+            if (view === 'source-control') {
+                loadModifiedFilesList();
+            } else if (view === 'settings') {
+                showStorageInfo();
             }
         }
-        function showLoading(text = 'Processing...', subtext = 'Please wait') {
+
+        function showLoading(title, text = '') {
+            document.getElementById('loadingTitle').textContent = title;
             document.getElementById('loadingText').textContent = text;
-            document.getElementById('loadingSubtext').textContent = subtext;
             document.getElementById('loadingOverlay').classList.remove('hidden');
-            document.getElementById('loadingOverlay').classList.add('flex');
         }
+
         function hideLoading() {
             document.getElementById('loadingOverlay').classList.add('hidden');
-            document.getElementById('loadingOverlay').classList.remove('flex');
         }
+
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             
             const colors = {
-                success: 'bg-white border-l-4 border-emerald-500',
-                error: 'bg-white border-l-4 border-red-500',
-                info: 'bg-white border-l-4 border-blue-500',
-                warning: 'bg-white border-l-4 border-yellow-500'
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-indigo-500',
+                warning: 'bg-yellow-500'
             };
-            
-            const icons = {
-                success: 'fa-check-circle text-emerald-500',
-                error: 'fa-exclamation-circle text-red-500',
-                info: 'fa-info-circle text-blue-500',
-                warning: 'fa-exclamation-triangle text-yellow-500'
-            };
-            
-            toast.className = `toast ${colors[type]} rounded-lg shadow-xl p-4 flex items-center gap-3 min-w-[300px]`;
+
+            toast.className = `toast ${colors[type] || colors.info} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 min-w-[300px]`;
             toast.innerHTML = `
-                <i class="fas ${icons[type]} text-xl"></i>
-                <span class="text-gray-800">${message}</span>
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} text-xl"></i>
+                <span>${message}</span>
             `;
-            
+
             container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        function log(message, color = 'text-green-400') {
-            const output = document.getElementById('consoleOutput');
-            if (!output) return;
-            const line = document.createElement('div');
-            line.className = color;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            output.appendChild(line);
-            output.scrollTop = output.scrollHeight;
-        }
-        function parseRepoUrl(url) {
-            const match = url.match(/github\.com\/([^\/]+)\/([^\/\.]+)/);
-            if (match) {
-                return { owner: match[1], repo: match[2] };
-            }
-            
-            const parts = url.split('/');
-            if (parts.length === 2) {
-                return { owner: parts[0], repo: parts[1] };
-            }
-            
-            return null;
+            setTimeout(() => toast.remove(), 5000);
         }
 
+        function log(message, colorClass = 'text-gray-300') {
+            console.log(message);
+        }
 
-        // --- Repository & Cloning ---
+        // --- Repository Management ---
 
         async function syncMetadata() {
-            const syncButton = document.getElementById('syncButton');
-            syncButton.disabled = true;
-            
-            const token = document.getElementById('tokenInput').value.trim();
             const repoInput = document.getElementById('repoInput').value.trim();
-
             if (!repoInput) {
-                showToast('Please enter a repository URL', 'error');
-                syncButton.disabled = false;
+                showToast('Please enter a repository', 'warning');
                 return;
             }
 
-            const parsed = parseRepoUrl(repoInput);
-            if (!parsed) {
+            const match = repoInput.match(/(?:https?:\/\/github\.com\/)?([^\/]+)\/([^\/]+)/);
+            if (!match) {
                 showToast('Invalid repository format', 'error');
-                syncButton.disabled = false;
                 return;
             }
 
-            currentRepo = {
-                owner: parsed.owner,
-                repo: parsed.repo,
-                branch: '', // Will be set by user
-                token: token
-            };
+            currentRepo.owner = match[1];
+            currentRepo.repo = match[2].replace(/\.git$/, '');
+            currentRepo.token = document.getElementById('tokenInput').value.trim();
 
-            showLoading('Syncing metadata...', 'Fetching repo info & branches');
+            showLoading('Syncing repository...', 'Fetching metadata');
             
             try {
-                // Check user permissions
                 await checkUserPermissions();
-                if (!checkPermission('read')) {
-                    throw new Error('You do not have permission to access this repository');
-                }
                 
-                // Get repo info
-                const repoInfo = await githubFetch('');
-                
-                // Set default branch
-                currentRepo.branch = repoInfo.default_branch;
-                await saveToIndexedDB('metadata', { key: 'currentRepo', value: currentRepo });
+                const repoData = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}`);
+                currentRepo.branch = repoData.default_branch;
 
-                // Get branches and update all UI
-                await refreshBranchList(true); // true = select currentRepo.branch
+                await saveToIndexedDB('metadata', {
+                    key: 'repoInfo',
+                    value: repoData
+                });
 
-                // Populate UI
-                document.getElementById('repoMetadataOutput').textContent = `
-                    ${repoInfo.full_name}
-                    ${repoInfo.description || ''}
-                    ⭐ ${repoInfo.stargazers_count}  |  🍴 ${repoInfo.forks_count}
-                `;
-                
-                document.getElementById('repoMetadataSection').classList.remove('hidden');
-                showToast('Metadata synced!', 'success');
-                log('✓ Metadata synced');
+                const branches = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/branches`);
+                const branchSelect = document.getElementById('branchSelect');
+                branchSelect.innerHTML = branches.map(b => 
+                    `<option value="${b.name}" ${b.name === currentRepo.branch ? 'selected' : ''}>${b.name}</option>`
+                ).join('');
 
+                await saveToIndexedDB('metadata', {
+                    key: 'currentRepo',
+                    value: currentRepo
+                });
+
+                showToast(`Synced ${currentRepo.owner}/${currentRepo.repo}`, 'success');
+                log(`✓ Synced: ${currentRepo.owner}/${currentRepo.repo}`);
             } catch (error) {
-                log(`✗ Error: ${error.message}`, 'text-red-400');
                 showToast('Sync failed: ' + error.message, 'error');
+                log(`✗ Sync error: ${error.message}`, 'text-red-400');
             } finally {
                 hideLoading();
-                syncButton.disabled = false;
             }
         }
-        
+
         async function cloneRepository() {
-            const cloneButton = document.getElementById('cloneButton');
-            cloneButton.disabled = true;
-            
+            if (!currentRepo.owner || !currentRepo.repo) {
+                showToast('Sync repository first', 'warning');
+                return;
+            }
+
             const selectedBranch = document.getElementById('branchSelect').value;
             currentRepo.branch = selectedBranch;
-            
-            document.getElementById('consoleOutput').textContent = '';
-            
-            if (hasToken()) {
-                showLoading('Cloning repository...', 'Using authentication');
-            } else {
-                showLoading('Cloning public repository...', 'No authentication');
-            }
-            
-            try {
-                await checkUserPermissions();
-                if (!checkPermission('read')) {
-                    throw new Error('You do not have permission to access this repository');
-                }
 
+            showLoading('Cloning repository...', 'This may take a moment');
+            document.getElementById('cloneProgress').classList.remove('hidden');
+
+            try {
                 log(`🚀 Starting clone: ${currentRepo.owner}/${currentRepo.repo}`);
                 log(`📍 Branch: ${currentRepo.branch}`);
                 
-                document.getElementById('cloneProgress').classList.remove('hidden');
-                updateProgress(10, 'Fetching repository info...');
+                updateCloneProgress('Fetching file tree...', 10);
 
-                const repoInfo = await githubFetch('');
-                await saveToIndexedDB('metadata', { key: 'repoInfo', value: repoInfo });
-                
-                updateProgress(20, 'Fetching file tree...');
-
-                // Get tree
-                const treeData = await githubFetch(`/git/trees/${currentRepo.branch}?recursive=1`);
-
-                // Filter out any blobs that don't have a path
-                const files = treeData.tree.filter(item => item.type === 'blob' && item.path);
+                const treeResponse = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/trees/${currentRepo.branch}?recursive=1`);
+                const files = treeResponse.tree.filter(item => item.type === 'blob');
                 
                 log(`✓ Found ${files.length} files`);
-                await saveToIndexedDB('metadata', { key: 'tree', value: treeData.tree });
-                
-                updateProgress(30, `Downloading ${files.length} files...`);
 
-                // Download files
+                await saveToIndexedDB('metadata', {
+                    key: 'tree',
+                    value: treeResponse.tree
+                });
+
+                updateCloneProgress('Downloading files...', 30);
+
                 let downloaded = 0;
                 const batchSize = 10;
                 
@@ -1090,7 +856,6 @@
                     
                     await Promise.all(batch.map(async (file) => {
                         try {
-                            // Use contents API to get base64 data
                             const fileData = await githubFetch(`/contents/${file.path}?ref=${currentRepo.branch}`);
 
                             await saveToIndexedDB('files', {
@@ -1099,7 +864,7 @@
                                 encoding: fileData.encoding,
                                 size: fileData.size,
                                 sha: fileData.sha,
-                                isDirty: false // Track modification status (critical for the index)
+                                isDirty: false
                             });
                             downloaded++;
                         } catch (error) {
@@ -1108,50 +873,39 @@
                     }));
 
                     const progress = 30 + Math.floor((downloaded / files.length) * 60);
-                    updateProgress(progress, `Downloaded ${downloaded}/${files.length} files`);
+                    updateCloneProgress(`Downloaded ${downloaded}/${files.length} files`, progress);
                 }
 
-                updateProgress(90, 'Saving metadata...');
-                await saveToIndexedDB('metadata', { key: 'currentRepo', value: currentRepo });
-                await saveToIndexedDB('metadata', { key: 'userPermissions', value: userPermissions });
-                updateProgress(100, 'Complete!');
-                
                 log(`✓ Clone completed: ${downloaded} files downloaded`);
-                showToast('Repository cloned successfully!', 'success');
-                
+                updateCloneProgress('Finalizing...', 95);
+
                 await updateRepositoryUI();
-                await loadFileTree(); // This should now succeed due to the DB migration
+                await loadFileTree();
                 
+                updateCloneProgress('Complete!', 100);
                 setTimeout(() => {
                     document.getElementById('cloneProgress').classList.add('hidden');
-                }, 2000);
-
+                    showToast('Repository cloned successfully!', 'success');
+                }, 1000);
             } catch (error) {
-                log(`✗ Error: ${error.message}`, 'text-red-400');
                 showToast('Clone failed: ' + error.message, 'error');
+                log(`✗ Error: ${error.message}`, 'text-red-400');
             } finally {
                 hideLoading();
-                cloneButton.disabled = false;
             }
         }
-        
-        function browseFilesOnly() {
-            showToast('Browse-only mode is not yet implemented', 'info');
-            // TODO: This would fetch the tree but not download files.
-        }
 
-        function updateProgress(percent, text) {
-            document.getElementById('cloneProgressBar').style.width = percent + '%';
+        function updateCloneProgress(text, percent) {
             document.getElementById('cloneProgressText').textContent = text;
+            document.getElementById('cloneProgressPercent').textContent = `${percent}%`;
+            document.getElementById('cloneProgressBar').style.width = `${percent}%`;
         }
 
         async function updateRepositoryUI() {
-            // Update topbar
             document.getElementById('repoBadge').textContent = `${currentRepo.owner}/${currentRepo.repo}`;
             document.getElementById('repoBadge').classList.remove('hidden');
             document.getElementById('downloadZipBtn').classList.remove('hidden');
 
-            // Update stats
             const files = await getAllFromIndexedDB('files');
             const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
             
@@ -1159,10 +913,9 @@
             document.getElementById('statSize').textContent = (totalSize / 1024).toFixed(2) + ' KB';
             document.getElementById('statsGrid').classList.remove('hidden');
 
-            // Load additional stats
             await loadCommits();
-            await loadBranches(); // This now updates statBranches
-            await loadRepoInfo(); // Load repo info for the info tab
+            await loadBranches();
+            await loadRepoInfo();
         }
 
         // --- File Tree & Editor ---
@@ -1170,12 +923,11 @@
         async function loadFileTree() {
             const treeData = await getFromIndexedDB('metadata', 'tree');
             if (!treeData || !treeData.value) {
-                // If the tree isn't loaded, ensure the file tree shows a placeholder
                 document.getElementById('fileTree').innerHTML = '<div class="text-center text-gray-400 py-8">Clone a repository first</div>';
                 return;
             }
             
-            const dirtyFiles = await getDirtyFiles(); // This call should now be safe
+            const dirtyFiles = await getDirtyFiles();
             const dirtyPaths = new Set(dirtyFiles.map(f => f.path));
 
             const treeContainer = document.getElementById('fileTree');
@@ -1183,568 +935,320 @@
 
             const buildTree = (items) => {
                 const structure = {};
+                
                 items.forEach(item => {
-                    if (!item.path) return; // Safeguard
-                    const parts = item.path.split('/');
-                    let current = structure;
-                    
-                    parts.forEach((part, index) => {
-                        if (!current[part]) {
-                            current[part] = {
-                                type: index === parts.length - 1 && item.type === 'blob' ? 'file' : 'folder',
-                                path: item.path,
-                                children: {}
-                            };
-                        }
-                        current = current[part].children;
-                    });
+                    if (item.type === 'blob') {
+                        const parts = item.path.split('/');
+                        let current = structure;
+                        
+                        parts.forEach((part, index) => {
+                            if (index === parts.length - 1) {
+                                current[part] = { type: 'file', path: item.path };
+                            } else {
+                                current[part] = current[part] || { type: 'dir', children: {} };
+                                current = current[part].children;
+                            }
+                        });
+                    }
                 });
+                
                 return structure;
             };
 
-            const renderTree = (obj, container, level = 0) => {
-                Object.keys(obj).sort().forEach(key => {
-                    const item = obj[key];
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 py-2 px-3 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors tree-item';
-                    div.style.paddingLeft = (level * 20 + 12) + 'px';
+            const renderTree = (node, level = 0) => {
+                const container = document.createElement('div');
+                
+                Object.entries(node).sort(([a, objA], [b, objB]) => {
+                    if (objA.type === objB.type) return a.localeCompare(b);
+                    return objA.type === 'dir' ? -1 : 1;
+                }).forEach(([name, obj]) => {
+                    const item = document.createElement('div');
+                    item.style.paddingLeft = (level * 16) + 'px';
+                    item.className = 'py-1 px-2 hover:bg-gray-100 cursor-pointer rounded flex items-center gap-2';
                     
-                    const isDirty = item.type === 'file' && dirtyPaths.has(item.path);
-                    const dirtyIndicator = isDirty ? '<span class="file-modified-indicator">M</span>' : '';
-                    
-                    if (item.type === 'file') {
-                        div.innerHTML = `<i class="fas fa-file text-gray-400 text-xs"></i><span class="text-sm">${key}</span>${dirtyIndicator}`;
-                        div.onclick = (e) => openFile(item.path, e);
-                    } else {
-                        div.innerHTML = `<i class="fas fa-folder text-yellow-500 text-xs"></i><span class="text-sm font-medium">${key}</span>`;
-                        const childContainer = document.createElement('div');
-                        childContainer.style.display = 'none'; // Folders start closed
-                        div.onclick = (e) => {
-                            e.stopPropagation();
-                            const icon = div.querySelector('i');
-                            if (childContainer.style.display === 'none') {
-                                childContainer.style.display = 'block';
-                                icon.classList.remove('fa-folder');
-                                icon.classList.add('fa-folder-open');
-                            } else {
-                                childContainer.style.display = 'none';
-                                icon.classList.remove('fa-folder-open');
-                                icon.classList.add('fa-folder');
+                    if (obj.type === 'dir') {
+                        item.innerHTML = `<i class="fas fa-folder text-yellow-500"></i> <span>${name}</span>`;
+                        item.onclick = () => {
+                            const children = item.nextElementSibling;
+                            if (children && children.classList.contains('tree-children')) {
+                                children.classList.toggle('hidden');
+                                item.querySelector('i').classList.toggle('fa-folder');
+                                item.querySelector('i').classList.toggle('fa-folder-open');
                             }
                         };
-                        container.appendChild(div);
-                        container.appendChild(childContainer);
-                        renderTree(item.children, childContainer, level + 1);
-                        return;
+                        container.appendChild(item);
+                        
+                        const children = document.createElement('div');
+                        children.className = 'tree-children';
+                        children.appendChild(renderTree(obj.children, level + 1));
+                        container.appendChild(children);
+                    } else {
+                        const isDirty = dirtyPaths.has(obj.path);
+                        item.innerHTML = `
+                            <i class="fas fa-file-code text-indigo-500"></i> 
+                            <span>${name}</span>
+                            ${isDirty ? '<span class="file-modified-indicator">●</span>' : ''}
+                        `;
+                        item.onclick = () => openFile(obj.path);
+                        container.appendChild(item);
                     }
-                    
-                    container.appendChild(div);
                 });
+                
+                return container;
             };
 
-            const structure = buildTree(treeData.value);
-            renderTree(structure, treeContainer);
-            
-            // Also refresh the Source Control change list
-            await updateChangedFilesList();
+            const tree = buildTree(treeData.value);
+            treeContainer.appendChild(renderTree(tree));
         }
-        
-        async function updateChangedFilesList() {
-            const container = document.getElementById('changedFilesList');
-            let dirtyFiles = [];
-            try {
-                dirtyFiles = await getDirtyFiles();
-            } catch (error) {
-                console.error("Failed to get dirty files list:", error);
-                container.innerHTML = '<div class="text-center text-red-400 py-8">Error loading changes</div>';
-                document.getElementById('commitButton').disabled = true; // Still need to disable the button
+
+        async function openFile(path) {
+            const file = await getFromIndexedDB('files', path);
+            if (!file) {
+                showToast('File not found', 'error');
                 return;
             }
 
-            container.innerHTML = '';
+            currentFile = file;
+            document.getElementById('editorFileName').innerHTML = `<i class="fas fa-file-code"></i> ${path}`;
 
+            if (!monacoEditor) {
+                await initMonacoEditor();
+            }
+
+            const content = file.encoding === 'base64' ? atob(file.content) : file.content;
+            const language = detectLanguage(path);
+            
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+            monacoEditor.setValue(content);
+            monacoEditor.getModel().setValue(content);
+
+            document.getElementById('saveFileBtn').disabled = true;
+            document.getElementById('discardBtn').disabled = true;
+        }
+
+        async function initMonacoEditor() {
+            return new Promise((resolve, reject) => {
+                require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+                require(['vs/editor/editor.main'], function () {
+                    monacoEditor = monaco.editor.create(document.getElementById('editor'), {
+                        value: '// Select a file to edit',
+                        language: 'javascript',
+                        theme: 'vs-dark',
+                        automaticLayout: true,
+                        minimap: { enabled: false }
+                    });
+
+                    monacoEditor.onDidChangeModelContent(() => {
+                        if (currentFile) {
+                            const enabled = monacoEditor.getValue() !== (currentFile.encoding === 'base64' ? atob(currentFile.content) : currentFile.content);
+                            document.getElementById('saveFileBtn').disabled = !enabled;
+                            document.getElementById('discardBtn').disabled = !enabled;
+                        }
+                    });
+
+                    resolve();
+                });
+            });
+        }
+
+        function detectLanguage(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const langMap = {
+                'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+                'py': 'python', 'java': 'java', 'cpp': 'cpp', 'c': 'c', 'cs': 'csharp',
+                'html': 'html', 'css': 'css', 'scss': 'scss', 'json': 'json',
+                'md': 'markdown', 'xml': 'xml', 'yaml': 'yaml', 'yml': 'yaml',
+                'sh': 'shell', 'bash': 'shell', 'sql': 'sql', 'go': 'go', 'rs': 'rust'
+            };
+            return langMap[ext] || 'plaintext';
+        }
+
+        async function saveFileChanges() {
+            if (!currentFile || !userPermissions.canPush) {
+                showToast('Cannot save: no push permissions', 'error');
+                return;
+            }
+
+            const newContent = monacoEditor.getValue();
+            const base64Content = btoa(unescape(encodeURIComponent(newContent)));
+
+            currentFile.content = base64Content;
+            currentFile.encoding = 'base64';
+            currentFile.isDirty = true;
+
+            await saveToIndexedDB('files', currentFile);
+
+            document.getElementById('saveFileBtn').disabled = true;
+            document.getElementById('discardBtn').disabled = true;
+            
+            await loadFileTree();
+            showToast('Changes saved locally', 'success');
+        }
+
+        async function discardFileChanges() {
+            if (!currentFile) return;
+            
+            const originalContent = currentFile.encoding === 'base64' ? atob(currentFile.content) : currentFile.content;
+            monacoEditor.setValue(originalContent);
+            
+            document.getElementById('saveFileBtn').disabled = true;
+            document.getElementById('discardBtn').disabled = true;
+            
+            showToast('Changes discarded', 'info');
+        }
+
+        // --- Source Control ---
+
+        async function loadModifiedFilesList() {
+            const dirtyFiles = await getDirtyFiles();
+            const container = document.getElementById('modifiedFilesList');
+            
             if (dirtyFiles.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-8">No changes detected</div>';
+                container.innerHTML = '<div class="text-center text-gray-400 py-4">No modified files</div>';
                 document.getElementById('commitButton').disabled = true;
                 return;
             }
-            
-            document.getElementById('commitButton').disabled = false;
-            dirtyFiles.forEach(file => {
-                const div = document.createElement('div');
-                div.className = 'bg-gray-50 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-gray-100';
-                div.innerHTML = `
-                    <i class="fas fa-file text-gray-600"></i>
-                    <span class="text-sm font-medium text-gray-800">${file.path}</span>
-                    <span class="file-modified-indicator ml-auto">M</span>
-                `;
-                div.onclick = () => {
-                    switchView('files');
-                    openFile(file.path, null);
-                };
-                container.appendChild(div);
-            });
+
+            container.innerHTML = dirtyFiles.map(file => `
+                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <i class="fas fa-file-code text-yellow-500"></i>
+                    <span class="flex-1 font-mono text-sm">${file.path}</span>
+                    <span class="text-xs text-yellow-600 font-medium">Modified</span>
+                </div>
+            `).join('');
+
+            document.getElementById('commitButton').disabled = !userPermissions.canPush;
         }
 
-        function initMonacoEditor() {
-            if (monacoInitPromise) {
-                return monacoInitPromise;
-            }
-
-            monacoInitPromise = new Promise((resolve, reject) => {
-                const checkLoader = () => {
-                    if (typeof require === 'undefined') {
-                        setTimeout(checkLoader, 100);
-                        return;
-                    }
-
-                    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
-                    require(['vs/editor/editor.main'], function () {
-                        try {
-                            monacoEditor = monaco.editor.create(document.getElementById('editor'), {
-                                value: '// Select a file from the tree to edit',
-                                language: 'javascript',
-                                theme: 'vs-dark',
-                                automaticLayout: true,
-                                fontSize: 14,
-                                minimap: { enabled: true },
-                                readOnly: !checkPermission('write')
-                            });
-
-                            monacoEditor.onDidChangeModelContent(() => {
-                                if (currentFile.path && checkPermission('write')) {
-                                    const newContent = monacoEditor.getValue();
-                                    if (newContent !== currentFile.originalContent) {
-                                        fileModified = true;
-                                        document.getElementById('saveBtn').disabled = false;
-                                    } else {
-                                        fileModified = false;
-                                        document.getElementById('saveBtn').disabled = true;
-                                    }
-                                }
-                            });
-                            resolve(monacoEditor);
-                        } catch (error) {
-                            reject(error);
-                        }
-                    }, (error) => {
-                        reject(error);
-                    });
-                };
-                checkLoader();
-            });
-            
-            return monacoInitPromise;
-        }
-
-        async function openFile(path, e) {
-            try {
-                if (!monacoEditor) {
-                    showLoading('Loading Editor...', 'Just a moment');
-                    await initMonacoEditor(); 
-                    hideLoading();
-                }
-
-                const file = await getFromIndexedDB('files', path);
-                if (!file) {
-                    showToast('File not found', 'error');
-                    return;
-                }
-
-                let content = '';
-                try {
-                    content = atob(file.content);
-                } catch (e) {
-                    log(`⚠️  Could not decode file: ${path}. It may be binary.`, 'text-yellow-400');
-                    showToast('Could not open file (may be binary)', 'error');
-                    return;
-                }
-
-
-                // Set global state
-                currentFile = {
-                    path: path,
-                    originalContent: content // Store original content
-                };
-                fileModified = false;
-
-                const extension = path.split('.').pop();
-                const languageMap = {
-                    'js': 'javascript', 'ts': 'typescript', 'py': 'python',
-                    'java': 'java', 'cpp': 'cpp', 'c': 'c', 'html': 'html',
-                    'css': 'css', 'json': 'json', 'md': 'markdown',
-                    'xml': 'xml', 'yaml': 'yaml', 'yml': 'yaml'
-                };
-                const language = languageMap[extension] || 'plaintext';
-                
-                monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
-                monacoEditor.setValue(content);
-                monacoEditor.updateOptions({ readOnly: !checkPermission('write') });
-                
-                document.getElementById('editorFilename').innerHTML = `
-                    <i class="fas fa-file-code"></i>
-                    <span>${path}</span>
-                `;
-
-                // Highlight tree item
-                document.querySelectorAll('.tree-item').forEach(item => item.classList.remove('bg-indigo-100'));
-                if (e && e.target) {
-                    e.target.closest('.tree-item').classList.add('bg-indigo-100');
-                }
-                
-                // Disable save button until changes are made
-                document.getElementById('saveBtn').disabled = true;
-
-            } catch (error) {
-                hideLoading();
-                console.error("Failed to open file or load editor:", error);
-            }
-        }
-
-        async function saveFile() {
-            if (!currentFile.path || !fileModified) return;
-
-            if (!checkPermission('write')) {
-                showToast('Authentication required for write access', 'error');
-                return;
-            }
-
-            try {
-                const newContent = monacoEditor.getValue();
-                const encoded = btoa(newContent);
-                
-                const file = await getFromIndexedDB('files', currentFile.path);
-                file.content = encoded;
-                file.size = new Blob([newContent]).size;
-                
-                // Mark file as 'dirty' for commit
-                file.isDirty = true; 
-                
-                await saveToIndexedDB('files', file);
-                
-                // Update original content state
-                currentFile.originalContent = newContent;
-                fileModified = false;
-                document.getElementById('saveBtn').disabled = true;
-                
-                showToast('File saved locally', 'success');
-                log(`✓ Saved: ${currentFile.path}`);
-                
-                // Refresh file tree to show 'M' indicator
-                await loadFileTree();
-
-            } catch (error) {
-                showToast('Save failed: ' + error.message, 'error');
-            }
-        }
-
-        // --- Git Data API Helpers (for multi-file commit) ---
-
-        async function getRef(ref) {
-            log(`1. Getting ref: ${ref}`);
-            return await githubFetch(`/git/refs/${ref}`);
-        }
-        
-        async function getCommit(sha) {
-            log(`2. Getting commit: ${sha.substring(0, 7)}`);
-            return await githubFetch(`/git/commits/${sha}`);
-        }
-
-        async function createBlob(content) {
-            // content is expected to be base64
-            const blob = await githubFetch('/git/blobs', {
-                method: 'POST',
-                body: JSON.stringify({
-                    content: content,
-                    encoding: 'base64'
-                })
-            });
-            return blob;
-        }
-
-        async function createTree(baseTreeSha, treeEntries) {
-            log(`4. Creating new tree...`);
-            const tree = await githubFetch('/git/trees', {
-                method: 'POST',
-                body: JSON.stringify({
-                    base_tree: baseTreeSha,
-                    tree: treeEntries
-                })
-            });
-            return tree;
-        }
-
-        async function createCommit(treeSha, parentSha, message) {
-            log(`5. Creating new commit...`);
-            const commit = await githubFetch('/git/commits', {
-                method: 'POST',
-                body: JSON.stringify({
-                    message: message,
-                    tree: treeSha,
-                    parents: [parentSha]
-                })
-            });
-            return commit;
-        }
-
-        async function updateRef(ref, commitSha) {
-            log(`6. Updating ref ${ref}...`);
-            return await githubFetch(`/git/refs/${ref}`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    sha: commitSha
-                })
-            });
-        }
-        
-        // --- Source Control ---
-
-        async function commitAndPushAll() {
-            const commitButton = document.getElementById('commitButton');
-            commitButton.disabled = true;
-            
-            if (!checkPermission('write')) {
-                showToast('Authentication required to push changes', 'error');
-                commitButton.disabled = false;
-                return;
-            }
-
+        async function commitChanges() {
             const message = document.getElementById('commitMessage').value.trim();
             if (!message) {
-                showToast('Please enter a commit message', 'error');
-                commitButton.disabled = false;
-                return;
-            }
-            
-            const dirtyFiles = await getDirtyFiles();
-            if (dirtyFiles.length === 0) {
-                showToast('No changes to commit', 'info');
-                commitButton.disabled = false; // Re-enable, as there's nothing to do
+                showToast('Please enter a commit message', 'warning');
                 return;
             }
 
-            showLoading('Committing changes...', 'Using the Git Data API');
-            log(`🚀 Committing ${dirtyFiles.length} files...`);
+            if (!userPermissions.canPush) {
+                showToast('You do not have push permissions', 'error');
+                return;
+            }
+
+            showLoading('Committing changes...', 'Pushing to GitHub');
 
             try {
-                // 1. Get current branch ref
-                const branchRef = `heads/${currentRepo.branch}`;
-                const refData = await getRef(branchRef);
-                const parentCommitSha = refData.object.sha;
+                const dirtyFiles = await getDirtyFiles();
+                
+                const gitConfig = await getFromIndexedDB('metadata', 'gitConfig');
+                const author = {
+                    name: gitConfig?.value?.name || 'Unknown',
+                    email: gitConfig?.value?.email || 'unknown@example.com'
+                };
 
-                // 2. Get base tree SHA from parent commit
-                const parentCommit = await getCommit(parentCommitSha);
-                const baseTreeSha = parentCommit.tree.sha;
+                const refResponse = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/refs/heads/${currentRepo.branch}`);
+                const latestCommitSha = refResponse.object.sha;
 
-                // 3. Create new blobs for all changed files
-                log(`3. Creating ${dirtyFiles.length} blobs...`);
-                const blobPromises = dirtyFiles.map(file => createBlob(file.content));
-                const newBlobs = await Promise.all(blobPromises);
-                
-                // 4. Create the new tree object
-                const newTreeEntries = dirtyFiles.map((file, index) => {
-                    log(`  + ${file.path} (sha: ${newBlobs[index].sha.substring(0,7)})`);
-                    return {
-                        path: file.path,
-                        mode: '100644', // file
-                        type: 'blob',
-                        sha: newBlobs[index].sha
-                    };
-                });
-                
-                // 5. Create the new tree
-                const newTree = await createTree(baseTreeSha, newTreeEntries);
-                
-                // 6. Create the new commit
-                const newCommit = await createCommit(newTree.sha, parentCommitSha, message);
-                log(`✓ New commit created: ${newCommit.sha.substring(0,7)}`);
-                
-                // 7. Update the branch ref to point to the new commit
-                await updateRef(branchRef, newCommit.sha);
-                
-                // 8. Success! Update local IndexedDB
-                log(`7. Updating local database...`);
-                for (let i = 0; i < dirtyFiles.length; i++) {
-                    const file = dirtyFiles[i];
-                    file.isDirty = false;
-                    file.sha = newBlobs[i].sha; // Update SHA to the blob SHA
-                    await saveToIndexedDB('files', file);
-                }
-                
-                showToast('Changes pushed successfully!', 'success');
-                log('🎉 Commit & Push complete!');
-                
-                // Clear UI
-                document.getElementById('commitMessage').value = '';
-                await loadFileTree(); // Reloads tree (removes 'M') and source control list
+                const commitResponse = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/commits/${latestCommitSha}`);
+                const baseTreeSha = commitResponse.tree.sha;
 
-            } catch (error) {
-                showToast('Push failed: ' + error.message, 'error');
-                log(`✗ Push failed: ${error.message}`, 'text-red-400');
-                console.error(error);
-            } finally {
-                hideLoading();
-                // Button state will be reset by loadFileTree/updateChangedFilesList
-            }
-        }
-        
-        // NEW: Central function to refresh all branch UIs
-        async function refreshBranchList(selectCurrent = false) {
-            if (!currentRepo.owner) return;
-            
-            try {
-                const branches = await githubFetch('/branches');
-                
-                // Update stat
-                document.getElementById('statBranches').textContent = branches.length;
+                const tree = dirtyFiles.map(file => ({
+                    path: file.path,
+                    mode: '100644',
+                    type: 'blob',
+                    content: file.encoding === 'base64' ? atob(file.content) : file.content
+                }));
 
-                // Update "Branches" tab list
-                const listContainer = document.getElementById('branchesList');
-                listContainer.innerHTML = '';
-                branches.forEach(branch => {
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-500';
-                    const isCurrent = branch.name === currentRepo.branch;
-                    div.innerHTML = `
-                        <div class="flex items-center gap-2 font-medium text-gray-800 mb-2">
-                            <i class="fas fa-code-branch text-indigo-600"></i>
-                            ${branch.name}
-                            ${isCurrent ? '<span class="bg-indigo-600 text-white px-2 py-1 rounded text-xs ml-2">current</span>' : ''}
-                        </div>
-                        <div class="font-mono text-xs text-gray-500">
-                            ${branch.commit.sha.substring(0, 7)}
-                        </div>
-                    `;
-                    listContainer.appendChild(div);
-                });
-
-                // Update "Repository" tab dropdown
-                const branchSelect = document.getElementById('branchSelect');
-                branchSelect.innerHTML = '';
-                branches.forEach(branch => {
-                    const option = document.createElement('option');
-                    option.value = branch.name;
-                    option.textContent = branch.name;
-                    if (selectCurrent && branch.name === currentRepo.branch) {
-                        option.selected = true;
-                    }
-                    branchSelect.appendChild(option);
-                });
-                
-            } catch (error) {
-                console.error('Failed to load branches:', error);
-                document.getElementById('branchesList').innerHTML = `<p class="text-red-500">Failed to load branches.</p>`;
-                document.getElementById('branchSelect').innerHTML = `<option>Error loading</option>`;
-            }
-        }
-        
-        async function createNewBranch() {
-            const createButton = document.getElementById('createBranchButton');
-            createButton.disabled = true;
-
-            if (!checkPermission('write')) {
-                showToast('Authentication required to create branches', 'error');
-                createButton.disabled = false;
-                return;
-            }
-            
-            const newBranch = document.getElementById('newBranchName').value.trim();
-            let sourceBranch = document.getElementById('newBranchSource').value.trim();
-
-            if (!newBranch) {
-                showToast('Please enter a new branch name', 'error');
-                createButton.disabled = false;
-                return;
-            }
-
-            showLoading('Creating branch...', `Branch: ${newBranch}`);
-
-            try {
-                // 1. Get source branch SHA
-                if (!sourceBranch) {
-                    sourceBranch = currentRepo.branch || 'main';
-                }
-                
-                const refData = await getRef(`heads/${sourceBranch}`);
-                const sourceSha = refData.object.sha;
-                
-                // 2. Create new branch (ref)
-                await githubFetch('/git/refs', {
+                const treeResponse = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/trees`, {
                     method: 'POST',
                     body: JSON.stringify({
-                        ref: `refs/heads/${newBranch}`,
-                        sha: sourceSha
+                        base_tree: baseTreeSha,
+                        tree: tree
                     })
                 });
-                
-                showToast(`Branch '${newBranch}' created!`, 'success');
-                log(`✓ Branch created: ${newBranch}`);
-                
-                // FIXED: Set current branch to new branch and refresh all UI
-                currentRepo.branch = newBranch;
-                await refreshBranchList(true); // true = select new branch
 
+                const newCommit = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/commits`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        message: message,
+                        tree: treeResponse.sha,
+                        parents: [latestCommitSha],
+                        author: author,
+                        committer: author
+                    })
+                });
+
+                await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/git/refs/heads/${currentRepo.branch}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                        sha: newCommit.sha
+                    })
+                });
+
+                for (const file of dirtyFiles) {
+                    file.isDirty = false;
+                    await saveToIndexedDB('files', file);
+                }
+
+                document.getElementById('commitMessage').value = '';
+                await loadModifiedFilesList();
+                await loadFileTree();
+                await loadCommits();
+                
+                showToast('Changes committed and pushed!', 'success');
+                log(`✓ Committed: ${message}`);
             } catch (error) {
-                showToast('Failed to create branch: ' + error.message, 'error');
-                log(`✗ Branch creation failed: ${error.message}`, 'text-red-400');
+                showToast('Commit failed: ' + error.message, 'error');
+                log(`✗ Commit error: ${error.message}`, 'text-red-400');
             } finally {
                 hideLoading();
-                createButton.disabled = false;
             }
         }
 
+        // --- Search ---
 
-        // --- Other Views ---
-
-        async function searchCode() {
+        async function searchFiles() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             if (!query) {
-                showToast('Please enter a search query', 'error');
+                showToast('Enter a search query', 'warning');
                 return;
             }
 
             showLoading('Searching...', 'Please wait');
             const resultsContainer = document.getElementById('searchResults');
-            resultsContainer.innerHTML = '';
 
             try {
                 const files = await getAllFromIndexedDB('files');
-                let found = 0;
+                const results = [];
 
                 for (const file of files) {
-                    if (file.encoding !== 'base64') continue; 
-                    
-                    let content;
-                    try {
-                        content = atob(file.content);
-                    } catch (e) { continue; } // Skip undecodable files
-                    
+                    const content = file.encoding === 'base64' ? atob(file.content) : file.content;
                     const lines = content.split('\n');
                     
-                    if (file.path.toLowerCase().includes(query)) {
-                        addSearchResult(file.path, `Filename match`, file.path);
-                        found++;
-                    }
-
                     lines.forEach((line, index) => {
                         if (line.toLowerCase().includes(query)) {
-                            const highlighted = line.replace(
-                                new RegExp(query, 'gi'),
-                                match => `<span class="bg-yellow-300 text-black px-1 rounded">${match}</span>`
-                            );
-                            addSearchResult(file.path, highlighted, `Line ${index + 1}`);
-                            found++;
+                            results.push({
+                                path: file.path,
+                                line: index + 1,
+                                content: line.trim()
+                            });
                         }
                     });
                 }
 
-                if (found === 0) {
+                if (results.length === 0) {
                     resultsContainer.innerHTML = '<div class="text-center text-gray-400 py-8">No results found</div>';
+                } else {
+                    resultsContainer.innerHTML = `
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Found ${results.length} results</h3>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                            ${results.slice(0, 100).map(r => `
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <div class="text-xs text-gray-500 mb-1">${r.path}:${r.line}</div>
+                                    <div class="font-mono text-sm">${r.content}</div>
+                                </div>
+                            `).join('')}
+                            ${results.length > 100 ? '<div class="text-center text-sm text-gray-500 mt-4">Showing first 100 results</div>' : ''}
+                        </div>
+                    `;
                 }
-
-                showToast(`Found ${found} results`, 'success');
-                log(`🔍 Search "${query}": ${found} results`);
-
             } catch (error) {
                 showToast('Search failed: ' + error.message, 'error');
             } finally {
@@ -1752,109 +1256,56 @@
             }
         }
 
-        function addSearchResult(filepath, content, lineInfo) {
-            const resultsContainer = document.getElementById('searchResults');
-            const div = document.createElement('div');
-            div.className = 'bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-indigo-500';
-            div.innerHTML = `
-                <div class="flex items-center gap-2 font-medium text-gray-800 mb-2">
-                    <i class="fas fa-file-code text-indigo-600"></i>
-                    ${filepath}
-                    <span class="text-xs text-gray-500 ml-2">${lineInfo}</span>
-                </div>
-                <div class="bg-gray-100 p-3 rounded font-mono text-sm text-gray-700 overflow-x-auto">${content}</div>
-            `;
-            div.onclick = () => {
-                // Find the correct nav items to update the sidebar UI
-                document.querySelectorAll('.nav-item').forEach(n => {
-                    n.classList.remove('bg-indigo-600', 'border-indigo-500');
-                });
-                document.querySelector(`.nav-item[onclick="switchView('files')"]`).classList.add('bg-indigo-600', 'border-indigo-500');
-                
-                document.querySelectorAll('.view-container').forEach(v => v.classList.add('hidden'));
-                document.getElementById('view-files').classList.remove('hidden');
-
-                setTimeout(() => openFile(filepath, null), 100); // Pass null for the event
-            };
-            resultsContainer.appendChild(div);
-        }
+        // --- Commits ---
 
         async function loadCommits() {
-            if (!currentRepo.owner) return;
             try {
-                const commits = await githubFetch('/commits?per_page=30');
+                const commits = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/commits?per_page=10`);
                 const container = document.getElementById('commitsList');
-                container.innerHTML = '';
-                document.getElementById('statCommits').textContent = '30+'; // Simple stat
-
-                commits.forEach(commit => {
-                    const div = document.createElement('div');
-                    div.className = 'bg-gray-50 rounded-lg p-4 border-l-4 border-indigo-500';
-                    div.innerHTML = `
-                        <div class="flex items-center gap-2 font-medium text-gray-800 mb-2">
-                            <i class="fas fa-code-commit text-indigo-600"></i>
-                            ${commit.commit.message.split('\n')[0]}
-                        </div>
-                        <div class="text-sm text-gray-600 mb-1">
-                            <strong>${commit.commit.author.name}</strong> committed on 
-                            ${new Date(commit.commit.author.date).toLocaleString()}
-                        </div>
-                        <div class="font-mono text-xs text-gray-500">
-                            ${commit.sha.substring(0, 7)}
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (error) {
-                console.error('Failed to load commits:', error);
-                document.getElementById('commitsList').innerHTML = `<p class="text-red-500">Failed to load commits.</p>`;
-            }
-        }
-        
-        // Wrapper function to call the central refresh
-        async function loadBranches() {
-            await refreshBranchList(true);
-        }
-
-        async function loadCollaborators() {
-            if (!checkPermission('admin')) { // Need admin for this
-                showToast('Admin permission required to view collaborators', 'warning');
-                return;
-            }
-            showLoading('Loading collaborators...', 'Please wait');
-            try {
-                const collaborators = await githubFetch('/collaborators');
-                const container = document.getElementById('collaboratorsList');
-                container.innerHTML = '';
-
-                if (collaborators.length === 0) {
-                    container.innerHTML = '<div class="text-center text-gray-400 py-4">No collaborators found</div>';
-                } else {
-                    collaborators.forEach(collab => {
-                        const div = document.createElement('div');
-                        div.className = 'bg-gray-50 rounded-lg p-4 flex items-center justify-between mb-3';
-                        div.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <img src="${collab.avatar_url}" class="w-10 h-10 rounded-full" alt="${collab.login}">
-                                <div>
-                                    <div class="font-medium text-gray-800">${collab.login}</div>
-                                    <div class="text-sm text-gray-600">${collab.permissions?.admin ? 'Admin' : collab.permissions?.push ? 'Write' : 'Read'}</div>
-                                </div>
+                
+                container.innerHTML = commits.map(c => `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-code-commit text-indigo-500 mt-1"></i>
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-800">${c.commit.message}</p>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    by ${c.commit.author.name} • ${new Date(c.commit.author.date).toLocaleString()}
+                                </p>
+                                <p class="text-xs text-gray-400 mt-1 font-mono">${c.sha.substring(0, 7)}</p>
                             </div>
-                            <a href="${collab.html_url}" target="_blank" class="text-indigo-600 hover:text-indigo-700">
-                                <i class="fas fa-external-link-alt"></i>
-                            </a>
-                        `;
-                        container.appendChild(div);
-                    });
-                }
-                showToast('Collaborators loaded', 'success');
+                        </div>
+                    </div>
+                `).join('');
             } catch (error) {
-                showToast('Failed to load collaborators: ' + error.message, 'error');
-            } finally {
-                hideLoading();
+                document.getElementById('commitsList').innerHTML = '<div class="text-center text-gray-400 py-8">Failed to load commits</div>';
             }
         }
+
+        // --- Branches ---
+
+        async function loadBranches() {
+            try {
+                const branches = await githubFetch(`/repos/${currentRepo.owner}/${currentRepo.repo}/branches`);
+                const container = document.getElementById('branchesList');
+                
+                document.getElementById('statBranches').textContent = branches.length;
+                
+                container.innerHTML = branches.map(b => `
+                    <div class="bg-gray-50 rounded-lg p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-code-branch text-indigo-500"></i>
+                            <span class="font-medium text-gray-800">${b.name}</span>
+                            ${b.name === currentRepo.branch ? '<span class="bg-indigo-500 text-white text-xs px-2 py-1 rounded">Current</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('branchesList').innerHTML = '<div class="text-center text-gray-400 py-8">Failed to load branches</div>';
+            }
+        }
+
+        // --- Download ZIP ---
 
         async function downloadAsZip() {
             if (typeof JSZip === 'undefined' || typeof saveAs === 'undefined') {
@@ -1868,7 +1319,6 @@
 
                 files.forEach(file => {
                     if (file.encoding === 'base64') {
-                        // JSZip's file() method can take base64 content directly
                         zip.file(file.path, file.content, { base64: true });
                     }
                 });
@@ -1901,15 +1351,15 @@
                 const files = await getAllFromIndexedDB('files');
                 const metadata = await getAllFromIndexedDB('metadata');
                 
-                const totalSize = files.reduce((sum, f => sum + (f.size || 0)), 0);
+                const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
                 
                 const info = document.getElementById('storageInfo');
                 info.textContent = `
-    Files stored: ${files.length}
-    Metadata entries: ${metadata.length}
-    Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB
-    Database: IndexedDB
-    Authentication: ${userPermissions.authenticated ? 'Active' : 'Not active'}
+Files stored: ${files.length}
+Metadata entries: ${metadata.length}
+Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB
+Database: IndexedDB
+Authentication: ${userPermissions.authenticated ? 'Active' : 'Not active'}
                 `;
             } catch (error) {
                 document.getElementById('storageInfo').textContent = "Could not calculate storage info.";
@@ -1924,7 +1374,7 @@
             try {
                 await clearIndexedDB('files');
                 await clearIndexedDB('metadata');
-                location.reload(); // Easiest way to reset all state
+                location.reload();
             } catch (error) {
                 showToast('Clear failed: ' + error.message, 'error');
             } finally {
@@ -1973,9 +1423,11 @@ Clone URL: ${info.clone_url}
         window.addEventListener('load', async () => {
             try {
                 await initDB();
-                log('✓ Database initialized (Version 4)');
+                log('✓ Database initialized (Version 5)');
                 
-                // Load saved repo
+                // Small delay to ensure database upgrade is complete
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
                 const savedRepo = await getFromIndexedDB('metadata', 'currentRepo');
                 if (savedRepo) {
                     currentRepo = savedRepo.value;
@@ -1994,11 +1446,9 @@ Clone URL: ${info.clone_url}
                     
                     log('✓ Loaded cached repository');
                 } else {
-                    // Initialize with default view settings
                     switchView('repo');
                 }
 
-                // Load settings
                 const gitConfig = await getFromIndexedDB('metadata', 'gitConfig');
                 if (gitConfig) {
                     document.getElementById('gitUserName').value = gitConfig.value.name;
